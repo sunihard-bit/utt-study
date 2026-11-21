@@ -1,0 +1,22 @@
+{
+ "seq1": {"code": "price = 25\nqty = 3\ntotal = price * qty\nprint(total)", "cols": ["price","qty","total"]},
+ "seq2": {"code": "length = float(input(\"Length: \"))\nwidth = float(input(\"Width: \"))\narea = length * width\nprint(\"Area:\", area)", "inputs": ["4","2.5"], "cols": ["length","width","area"]},
+ "swap": {"code": "a = 5\nb = 9\ntemp = a\na = b\nb = temp\nprint(a, b)", "cols": ["a","b","temp"]},
+ "sel1": {"code": "mark = int(input(\"Mark: \"))\nif mark >= 50:\n    print(\"Pass\")\nelse:\n    print(\"Fail\")", "inputs": ["42"], "cols": ["mark"]},
+ "sel2": {"code": "temp = int(input(\"Temp: \"))\nif temp >= 33:\n    msg = \"Hot\"\nelif temp >= 27:\n    msg = \"Warm\"\nelse:\n    msg = \"Cool\"\nprint(msg)", "inputs": ["30"], "cols": ["temp","msg"]},
+ "sel3": {"code": "age = 17\nhas_id = True\nif age >= 18:\n    if has_id:\n        print(\"Come in\")\n    else:\n        print(\"Show ID\")\nelse:\n    print(\"Too young\")", "cols": ["age","has_id"]},
+ "sel4": {"code": "x = 7\nif x > 5 and x < 10:\n    result = \"in range\"\nelse:\n    result = \"out of range\"\nprint(result)", "cols": ["x","result"]},
+ "sel5": {"code": "price = 120\nif price > 100:\n    price = price - 20\nprint(price)", "cols": ["price"]},
+ "for1": {"code": "total = 0\nfor i in range(1, 5):\n    total = total + i\nprint(total)", "cols": ["i","total"]},
+ "for2": {"code": "for i in range(3):\n    print(i * 2)", "cols": ["i"]},
+ "for3": {"code": "for i in range(5, 0, -2):\n    print(i)", "cols": ["i"]},
+ "for4": {"code": "count = 0\nfor n in range(1, 7):\n    if n % 2 == 0:\n        count = count + 1\nprint(count)", "cols": ["n","count"]},
+ "for5": {"code": "total = 0\nfor i in range(3):\n    mark = int(input(\"Mark: \"))\n    total = total + mark\naverage = total / 3\nprint(average)", "inputs": ["60","75","90"], "cols": ["i","mark","total","average"]},
+ "for6": {"code": "biggest = 0\nfor i in range(3):\n    x = int(input())\n    if x > biggest:\n        biggest = x\nprint(biggest)", "inputs": ["4","9","6"], "cols": ["i","x","biggest"]},
+ "while1": {"code": "count = 1\nwhile count <= 3:\n    print(count)\n    count = count + 1\nprint(\"Done\")", "cols": ["count"]},
+ "while2": {"code": "n = 10\nwhile n > 0:\n    n = n - 3\nprint(n)", "cols": ["n"]},
+ "while3": {"code": "balance = 100\nyears = 0\nwhile balance < 130:\n    balance = balance + 10\n    years = years + 1\nprint(years)", "cols": ["balance","years"]},
+ "sent1": {"code": "total = 0\nnum = int(input(\"Number (-1 to stop): \"))\nwhile num != -1:\n    total = total + num\n    num = int(input(\"Number (-1 to stop): \"))\nprint(\"Total:\", total)", "inputs": ["5","8","2","-1"], "cols": ["num","total"]},
+ "sent2": {"code": "orders = 0\nitem = input(\"Item: \")\nwhile item != \"DONE\":\n    orders = orders + 1\n    item = input(\"Item: \")\nprint(orders, \"orders\")", "inputs": ["doubles","roti","DONE"], "cols": ["item","orders"]},
+ "sent3": {"code": "count = 0\ntotal = 0\nmark = int(input())\nwhile mark >= 0:\n    count = count + 1\n    total = total + mark\n    mark = int(input())\nprint(total / count)", "inputs": ["80","60","-1"], "cols": ["mark","count","total"]}
+}
