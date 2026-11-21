@@ -29,7 +29,7 @@ const addDays = (k) => { const d=new Date(); d.setDate(d.getDate()+k); return ds
 function gapDays(a){ if(!a) return 999; const [y,m,d]=a.split("-").map(Number); const t=new Date(); const x=new Date(y,m-1,d); t.setHours(0,0,0,0); return Math.round((t-x)/86400000); }
 
 /* ---- save: this device, plus the cloud backup (main app) or Claude's storage (Coach) ---- */
-let cloudDoc = null, saveT = null, syncT = null, dirty = false, lastSync = null, syncErr = false;
+let cloudDoc = null, chatCol = null, saveT = null, syncT = null, dirty = false, lastSync = null, syncErr = false;
 function save(){
   try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){}
   if(cloudDoc){ clearTimeout(saveT); saveT = setTimeout(()=>{ cloudDoc.set({state:JSON.stringify(S), xp:S.xp, at:Date.now()}).catch(()=>{}); }, 1500); }
@@ -174,6 +174,8 @@ async function initCloud(){
       if(!db || !user) return;
       const id = await user.id(); if(!id) return;
       cloudDoc = db.collection("data/users/"+id).doc("coach");
+      chatCol = db.collection("data/users/"+id+"/coach/chats");
+      if(tab==="tutor") render();
       const snap = await cloudDoc.get();
       if(snap.exists){
         const remote = JSON.parse(snap.data().state || "{}");

@@ -67,7 +67,7 @@ function viewCoachWelcome(v){
 }
 
 /* =================== CHAT =================== */
-let chat = [], chatTopic = null, pendingChat = null, chatCtl = null, chatBusy = false, pendingImg = null;
+let chat = [], chatRef = null, chatId = null, chatTopic = null, pendingChat = null, chatCtl = null, chatBusy = false, pendingImg = null;
 function workPrompt(t){ return `Let's do "Work it with me"${t?` on ${t.name} (${SUBJ[t.s].code})`:""}. Give me ONE practice problem at my level (not from any assignment). Then guide me one step at a time: ask me to do just the next step and wait for my answer. If I'm wrong or stuck, give hint 1 (a nudge), then hint 2 (a bigger clue), then hint 3 (show that step) before moving on. Tell me exactly what I got right and where I went wrong. Don't reveal the final answer until I've tried each step.`; }
 function reviewPrompt(list){ return `Please help me review my mistakes, one at a time. For each one: explain in simple steps what I probably misunderstood, give me an everyday example, then give me a similar question to try and wait for my answer before moving on.\n\n` + list.map((m,k)=>`${k+1}. [${SUBJ[TOPIC[m.t]?.s]?.code||""} · ${TOPIC[m.t]?.name||""}] ${m.q}\n   I said: ${m.c??m.chosen}\n   Correct: ${m.a??m.correct}`).join("\n"); }
 function viewTutor(v){
@@ -78,7 +78,7 @@ function viewTutor(v){
     : ["Explain subnetting step by step","Work it with me: a trace table","What's the difference between a hub, switch and router?","Explain RAID 0, 1, 5 and 10 with pictures","Why does input() need int()?","Check my working (I'll send a photo)"];
   v.innerHTML = `
   <div class="row between"><div><h2 style="font-size:24px">Coach</h2><span class="muted" style="font-size:14px">${t?`Focus: ${esc(SUBJ[t.s].code)} · ${esc(t.name)}`:"Your NTWK, LOGC and COHW tutor"}</span></div>
-   <div class="row">${S.mistakes.length?`<button class="btn line sm" id="cRev">Review my mistakes</button>`:""}${chat.length?`<button class="btn line sm" id="cNew">New chat</button>`:""}</div></div>
+   <div class="row">${S.mistakes.length?`<button class="btn line sm" id="cRev">Review my mistakes</button>`:""}${chatCol?`<button class="btn line sm" id="cHist">Saved chats</button>`:""}${chat.length?`<button class="btn line sm" id="cNew">New chat</button>`:""}</div></div>
   ${chat.length?"":INTEGRITY}
   ${aiReady && !AI?aiBanner():""}
   <div class="chat" id="chatLog">
@@ -104,6 +104,7 @@ function viewTutor(v){
   if($("#cWork")) $("#cWork").onclick = ()=>sendChat(workPrompt(t), "🧩 Work it with me"+(t?": "+t.name:""));
   if($("#cNew")) $("#cNew").onclick = ()=>{ chatCtl?.abort(); chat=[]; chatTopic=null; pendingImg=null; render(); };
   if($("#cRev")) $("#cRev").onclick = ()=>{ S.n.review++; save(); chat=[]; sendChat(reviewPrompt(S.mistakes.slice(0,8)), "🔁 Review my mistakes"); };
+  if($("#cHist")) $("#cHist").onclick = showSavedChats;
   if($("#cCam")) $("#cCam").onclick = ()=>pickImage(()=>renderAttach());
   renderAttach();
   if(pendingChat && aiReady){ const p=pendingChat; pendingChat=null; if(typeof p==='string') sendChat(p); else sendChat(p.text, p.show); }
@@ -147,6 +148,47 @@ async function sendChat(text, show){
     if(e.code!=="cancelled") aiMsg.err = aiErr(e); else if(!aiMsg.content) aiMsg.content = "_Stopped._";
   }
   chatBusy = false; if(tab==="tutor") render();
+  saveChat();
+}
+
+/* ---- saved chats: kept in her own private Coach storage, so they follow her Claude account ---- */
+function chatTitle(list){ const u=list.find(m=>m.role==="user"); return String(u?.show||u?.content||"Chat").replace(/\s+/g," ").slice(0,70); }
+async function saveChat(){
+  if(!chatCol || !chat.length) return;
+  if(chatRef!==chat){ chatRef=chat; chatId = Date.now().toString(36)+Math.random().toString(36).slice(2,6); }
+  let msgs = chat.filter(m=>!m.pending && (m.role==="user" || m.content)).map(m=>({role:m.role, content:m.content, show:m.show||null, img:!!m.img}));
+  /* user prompts like "review my mistakes" can be long: store the label she saw, not the whole prompt */
+  msgs = msgs.map(m=>m.role==="user" && m.show ? Object.assign({}, m, {content:m.content.slice(0,4000)}) : m);
+  let body = JSON.stringify(msgs);
+  while(body.length > 200000 && msgs.length > 2){ msgs = msgs.slice(2); body = JSON.stringify(msgs); }
+  try{ await chatCol.doc(chatId).set({kind:"chat", title:chatTitle(chat), topic:chatTopic||null, at:Date.now(), count:msgs.length, msgs:body}); }catch(e){}
+}
+async function showSavedChats(){
+  if(!chatCol) return;
+  modal(`<h3 style="margin:0 0 4px">Saved chats</h3><p class="muted" style="margin:0 0 12px;font-size:14px">Every Coach chat is saved here, on any device where you open the Coach.</p><div id="histList" class="view" style="gap:8px"><p class="muted">Loading…</p></div><button class="btn line block" style="margin-top:12px" id="histClose">Close</button>`, ()=>{
+    $("#histClose").onclick = ()=>{ $("#modalRoot").innerHTML=""; };
+  });
+  const box = ()=>$("#histList");
+  const timer = setTimeout(()=>{ if(box() && /Loading/.test(box().textContent)) box().innerHTML = `<p class="muted">Couldn't load your chats. Check your internet and try again.</p>`; }, 10000);
+  let docs = [];
+  try{ docs = (await chatCol.orderBy("at","desc").limit(40).get()).docs; }catch(e){ clearTimeout(timer); if(box()) box().innerHTML = `<p class="muted">Couldn't load your chats. Check your internet and try again.</p>`; return; }
+  clearTimeout(timer);
+  if(!box()) return;
+  if(!docs.length){ box().innerHTML = `<p class="muted">No saved chats yet. Ask Coach something and it will appear here.</p>`; return; }
+  box().innerHTML = docs.map(d=>{ const x=d.data(); const t=x.topic&&TOPIC[x.topic];
+    return `<div class="row" style="flex-wrap:nowrap;gap:8px;align-items:center;border:1px solid var(--line);border-radius:12px;padding:10px">
+      <button class="linkbtn" data-open="${esc(d.id)}" style="flex:1;text-align:left;background:none;border:0;padding:0;color:var(--ink);font:inherit;cursor:pointer"><b style="display:block">${esc(x.title||"Chat")}</b><span class="muted" style="font-size:13px">${new Date(x.at).toLocaleDateString([], {day:"numeric",month:"short"})} ${new Date(x.at).toLocaleTimeString([], {hour:"numeric",minute:"2-digit"})}${t?" · "+esc(SUBJ[t.s].code):""} · ${x.count||0} messages</span></button>
+      <button class="btn line sm" data-del="${esc(d.id)}" aria-label="Delete this chat">Delete</button></div>`; }).join("");
+  const byId = Object.fromEntries(docs.map(d=>[d.id, d.data()]));
+  box().querySelectorAll("[data-open]").forEach(b=>b.onclick=()=>{
+    const x = byId[b.dataset.open]; let msgs=[]; try{ msgs = JSON.parse(x.msgs||"[]"); }catch(e){}
+    chatCtl?.abort(); chat = msgs; chatRef = chat; chatId = b.dataset.open; chatTopic = x.topic||null; pendingImg = null;
+    $("#modalRoot").innerHTML=""; go("tutor");
+  });
+  box().querySelectorAll("[data-del]").forEach(b=>b.onclick=async()=>{
+    if(b.dataset.sure!=="1"){ b.dataset.sure="1"; b.textContent="Sure?"; return; }
+    try{ await chatCol.doc(b.dataset.del).delete(); b.closest(".row").remove(); if(chatId===b.dataset.del){ chatRef=null; } }catch(e){ toast("Couldn't delete. Try again."); }
+  });
 }
 
 /* =================== LESSONS (inside Claude) =================== */
