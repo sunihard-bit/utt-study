@@ -44,7 +44,7 @@ const fmtCode = c => (c||"").replace(/(.{4})(?=.)/g,"$1-");
    On sync it pulls the cloud copy, merges in only what changed here since the base,
    then pushes the result. Counters add up, lists are joined, settings: newest change wins. */
 const BASE_KEY = KEY+".base";
-const LOCAL_ONLY = ["cloud","movedTo","shopTab","filter","map","find","pendXP","pendBase"];
+const LOCAL_ONLY = ["cloud","movedTo","movedSum","shopTab","filter","map","find","pendXP","pendBase"];
 const jeq = (a,b) => JSON.stringify(a)===JSON.stringify(b);
 const isObj = x => x && typeof x==="object" && !Array.isArray(x);
 function addN(l,r,b){ return Math.max(0, (+r||0) + (+l||0) - (+b||0)); }
@@ -106,8 +106,11 @@ async function syncNow(opts={}){
   try{
     let remote = await pullCloud(S.cloud.code), base = loadBase();
     /* this code was linked into another one: follow it, carrying over what changed here */
+    let sumFrom = null;
     for(let hop=0; hop<3 && remote && remote.movedTo && remote.movedTo!==S.cloud.code; hop++){
-      base = base || remote; const to = remote.movedTo;
+      /* movedSum: the new code doesn't hold this device's progress yet, so add all of it */
+      if(remote.movedSum){ base = {}; sumFrom = {code:S.cloud.code, stub:remote}; } else base = base || remote;
+      const to = remote.movedTo;
       remote = await pullCloud(to); S.cloud = Object.assign({}, S.cloud, {code:to, was:S.cloud.code}); dirty = true;
     }
     const before = JSON.stringify(S);
@@ -123,6 +126,7 @@ async function syncNow(opts={}){
       if(r.status===409){ clearTimeout(syncT); syncT = setTimeout(()=>syncNow({pull:true}), 1500); }
       if(!r.ok) throw 0;
     }
+    if(sumFrom) await fetch("/api/backup/"+sumFrom.code, {method:"PUT", headers:{"content-type":"application/json"}, body:JSON.stringify({state:Object.assign({}, sumFrom.stub, {movedSum:false})})}).catch(()=>{});
     try{ localStorage.setItem(BASE_KEY, snap); }catch(e){} lastSync = new Date(); syncErr = false;
     if(changedHere && JSON.stringify(S)!==before) afterSyncChange();
   }catch(e){ dirty = true; syncErr = true; }
