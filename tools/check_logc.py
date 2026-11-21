@@ -5,7 +5,8 @@ import json, subprocess, sys, io, builtins, pathlib, contextlib
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 js = "".join((ROOT/"src"/f).read_text() for f in ["10-content.js","12-lessons.js","15-traces.js"])
 js += "\nconsole.log(JSON.stringify({bank:BANK.filter(q=>q.t[0]==='l'), lessons:LESSONS, traces:TRACES, predict:typeof PREDICT_DECK!=='undefined'?PREDICT_DECK:[]}));"
-data = json.loads(subprocess.run(["node","-e",js],capture_output=True,text=True,check=True).stdout)
+_f = pathlib.Path("/tmp/_logc_check.js"); _f.write_text(js)
+data = json.loads(subprocess.run(["node",str(_f)],capture_output=True,text=True,check=True).stdout)
 
 def run(code, inputs=()):
     ins = list(inputs); out = io.StringIO()

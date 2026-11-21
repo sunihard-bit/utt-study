@@ -370,6 +370,20 @@ svg.net{width:100%;height:auto}
 .ipbits i{font-style:normal;width:9px;text-align:center} .ipbits u{text-decoration:none;width:8px;text-align:center;color:var(--muted)}
 .ipbits .nb,.iplg .nb{color:var(--sub)} .ipbits .hb,.iplg .hb{color:var(--gold)}
 .iplg{display:flex;gap:14px;justify-content:center;font-size:13px;font-weight:700}
+
+/* hardware visuals */
+svg.board{width:100%;height:auto;max-width:400px}
+.board .pcb{fill:color-mix(in srgb,var(--ok) 14%,var(--paper));stroke:var(--ok);stroke-width:2}
+.board .bp rect{fill:var(--paper);stroke:var(--muted);stroke-width:1.5}
+.board .bp.hl rect{fill:var(--gold-soft);stroke:var(--gold);stroke-width:3}
+.board text{font-size:10px;font-weight:700;fill:var(--ink);text-anchor:middle}
+.board .ff rect{fill:none;stroke-width:2.5} .board .ff0 rect{stroke:var(--sub)} .board .ff1 rect{stroke:var(--gold)} .board .ff2 rect{stroke:var(--red)}
+.board .ff text{font-size:12px;text-anchor:end} .board .ff .ffd{font-size:10px;font-weight:400;fill:var(--muted)}
+.raid{display:grid;gap:8px}
+.disk{display:flex;flex-direction:column;gap:4px;background:var(--bg);border:2px solid var(--sub);border-radius:10px 10px 14px 14px;padding:8px;text-align:center}
+.disk b{font-size:12px;color:var(--muted)}
+.disk span{font-family:var(--f-mono);font-weight:700;background:var(--sub-soft);color:var(--sub);border-radius:6px;padding:4px 0}
+.disk span.par{background:var(--gold-soft);color:var(--gold)}
 /* picture lessons */
 code,pre,kbd,samp,textarea,.mono,.qcode,.fc text,.ltable.tt td{font-variant-ligatures:none;font-feature-settings:"liga" 0,"calt" 0}
 .tsel{width:auto;min-width:80px;display:inline-block}

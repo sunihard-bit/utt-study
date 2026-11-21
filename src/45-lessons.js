@@ -87,6 +87,9 @@ function visHTML(v){
   if(v.k==="table") return `<div class="ltable"><table><thead><tr>${v.h.map(x=>`<th>${inl(x)}</th>`).join("")}</tr></thead><tbody>${v.rows.map(r=>`<tr>${r.map(x=>`<td>${inl(String(x))}</td>`).join("")}</tr>`).join("")}</tbody></table></div>${v.cap?`<p class="viscap">${inl(v.cap)}</p>`:""}`;
   if(v.k==="steps") return `<div class="lsteps">${v.items.map(([e,t],k)=>`<div class="lstep"><span class="le">${e}</span><span>${inl(t)}</span></div>${k<v.items.length-1?`<i aria-hidden="true">↓</i>`:""}`).join("")}</div>`;
   if(v.k==="net") return netSVG(v);
+  if(v.k==="board") return boardSVG(v);
+  if(v.k==="ff") return ffSVG();
+  if(v.k==="raid") return raidHTML(v);
   if(v.k==="pins") return pinsHTML(v);
   if(v.k==="bin") return binHTML(v);
   if(v.k==="ip") return ipHTML(v);
@@ -127,6 +130,27 @@ function ipHTML(v){
   const bits = r.bits.split("").map((b,k)=>`<i class="${k<v.cidr?"nb":"hb"}">${b}</i>${k%8===7&&k<31?`<u>.</u>`:""}`).join("");
   return `<div class="ipv"><div class="ipbits">${bits}</div><div class="iplg"><span class="nb">network bits: ${v.cidr}</span><span class="hb">host bits: ${32-v.cidr}</span></div>
   <div class="ltable"><table><tbody>${[["Address",`${v.ip}/${v.cidr}`],["Subnet mask",r.mask],["Network address",r.net],["First usable host",r.first],["Last usable host",r.last],["Broadcast address",r.bc],["Usable hosts",`2<sup>${32-v.cidr}</sup> − 2 = ${r.hosts}`]].map(([a,b])=>`<tr><td>${a}</td><td class="mono"><b>${b}</b></td></tr>`).join("")}</tbody></table></div></div>`;
+}
+
+/* ---------- hardware visuals ---------- */
+function boardSVG(v){
+  const parts = [["cpu",120,40,80,80,"CPU socket"],["dimm",220,30,14,110,""],["dimm",240,30,14,110,""],["dimm",260,30,14,110,""],["dimm",280,30,14,110,"RAM (DIMM)"],
+    ["io",10,20,40,130,"Rear I/O"],["pcie",40,180,180,12,"PCIe x16"],["pcie1",40,215,60,10,"PCIe x1"],["m2",120,150,90,14,"M.2"],["chip",230,190,40,40,"Chipset"],
+    ["bat",160,220,26,26,"CMOS battery"],["atx",305,40,14,80,"24-pin"],["sata",290,200,30,40,"SATA"],["eps",120,8,40,14,"8-pin CPU"]];
+  const hl = v.hl||[];
+  return `<div class="fcwrap"><svg class="board" viewBox="0 0 330 260" role="img" aria-label="Motherboard layout: ${esc(parts.filter(p=>p[5]).map(p=>p[5]).join(", "))}"><rect x="2" y="2" width="326" height="256" rx="8" class="pcb"/>
+  ${parts.map(([k,x,y,w,h,lab])=>`<g class="bp ${hl.includes(k)?"hl":""}"><rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${k==="bat"?13:3}"/>${lab?`<text x="${x+w/2}" y="${k==="dimm"?y+h+14:k==="atx"||k==="io"||k==="sata"?y+h+12:k==="pcie"||k==="pcie1"||k==="m2"?y+h+11:y+h/2+4}" ${k==="io"||k==="atx"||k==="sata"?`transform="rotate(${k==="io"?0:0})"`:""}>${esc(lab)}</text>`:""}</g>`).join("")}</svg>${v.cap?`<p class="viscap" style="text-align:center">${inl(v.cap)}</p>`:""}</div>`;
+}
+function ffSVG(){
+  const s = 0.95, f = [["ATX","305 × 244 mm",305,244],["Micro-ATX","244 × 244 mm",244,244],["Mini-ITX","170 × 170 mm",170,170]];
+  return `<div class="fcwrap"><svg class="board" viewBox="0 0 ${310*s} ${250*s}" role="img" aria-label="Motherboard sizes drawn to scale">${f.map(([n,d,w,h],k)=>`<g class="ff ff${k}"><rect x="2" y="${(244-h)*s+2}" width="${w*s}" height="${h*s}" rx="4"/><text x="${w*s-6}" y="${244*s-20}" text-anchor="end">${n}</text><text x="${w*s-6}" y="${244*s-7}" text-anchor="end" class="ffd">${d.replace(/ mm$/,"").replace(/ /g,"")}</text></g>`).join("")}</svg><p class="viscap" style="text-align:center">Drawn to scale. All three share the same mounting-hole layout, so smaller boards fit in bigger ATX cases.</p></div>`;
+}
+function raidHTML(v){
+  const L = {0:{d:2,rows:[["A1","A2"],["A3","A4"],["A5","A6"]],t:"RAID 0: striping",c:"Fast, full capacity, but if ONE disk fails, everything is lost."},
+    1:{d:2,rows:[["A1","A1"],["A2","A2"],["A3","A3"]],t:"RAID 1: mirroring",c:"Every block is on both disks. Survives one disk failing; you get half the total space."},
+    5:{d:3,rows:[["A1","A2","P"],["B1","P","B2"],["P","C1","C2"]],t:"RAID 5: striping with parity",c:"Needs 3+ disks. Parity (P) rebuilds any ONE failed disk. Usable space = (disks − 1) × size."},
+    10:{d:4,rows:[["A1","A1","A2","A2"],["A3","A3","A4","A4"]],t:"RAID 10: mirrors, then striped",c:"Needs 4+ disks. Fast and safe; you get half the total space."}}[v.level];
+  return `<div class="vis-title" style="text-align:center">${L.t}</div><div class="raid" style="grid-template-columns:repeat(${L.d},1fr)">${Array.from({length:L.d},(_,k)=>`<div class="disk"><b>Disk ${k+1}</b>${L.rows.map(r=>`<span class="${r[k]==="P"?"par":""}">${r[k]}</span>`).join("")}</div>`).join("")}</div><p class="viscap">${L.c}</p>`;
 }
 
 /* ---------- trace table player ---------- */
