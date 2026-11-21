@@ -18,6 +18,8 @@ async function api(req, env, code){
     let o; try{ o = JSON.parse(body); }catch(e){ return json({error:"bad json"}, 400); }
     const s = o && o.state;
     if(!s || typeof s !== "object" || typeof s.xp !== "number") return json({error:"bad state"}, 400);
+    // a code that was linked into another one keeps its forwarding note: devices still on it get 409 and follow movedTo
+    if(!s.movedTo){ const cur = await env.BACKUP.get(key, "json"); if(cur && cur.state && cur.state.movedTo) return json({error:"moved", movedTo:cur.state.movedTo}, 409); }
     const at = new Date().toISOString();
     await env.BACKUP.put(key, JSON.stringify({ state:s, at }), { metadata:{ name:String(s.name||"").slice(0,30), xp:s.xp, streak:s.streak||0, last:s.last||null, at } });
     return json({ok:true});

@@ -44,7 +44,7 @@ const fmtCode = c => (c||"").replace(/(.{4})(?=.)/g,"$1-");
    On sync it pulls the cloud copy, merges in only what changed here since the base,
    then pushes the result. Counters add up, lists are joined, settings: newest change wins. */
 const BASE_KEY = KEY+".base";
-const LOCAL_ONLY = ["cloud","shopTab","filter","map","find","pendXP","pendBase"];
+const LOCAL_ONLY = ["cloud","movedTo","shopTab","filter","map","find","pendXP","pendBase"];
 const jeq = (a,b) => JSON.stringify(a)===JSON.stringify(b);
 const isObj = x => x && typeof x==="object" && !Array.isArray(x);
 function addN(l,r,b){ return Math.max(0, (+r||0) + (+l||0) - (+b||0)); }
@@ -104,10 +104,15 @@ async function syncNow(opts={}){
   if(!dirty && !opts.pull) return;
   syncing = true; clearTimeout(syncT);
   try{
-    const remote = await pullCloud(S.cloud.code);
+    let remote = await pullCloud(S.cloud.code), base = loadBase();
+    /* this code was linked into another one: follow it, carrying over what changed here */
+    for(let hop=0; hop<3 && remote && remote.movedTo && remote.movedTo!==S.cloud.code; hop++){
+      base = base || remote; const to = remote.movedTo;
+      remote = await pullCloud(to); S.cloud = Object.assign({}, S.cloud, {code:to, was:S.cloud.code}); dirty = true;
+    }
     const before = JSON.stringify(S);
     /* no base yet (first sync after this update): the cloud copy came from this device, so it is the base */
-    let merged = remote ? mergeState(S, remote, loadBase() || remote) : S;
+    let merged = remote ? mergeState(S, remote, base || remote) : S;
     const changedHere = !jeq(merged, S);
     const needPush = dirty || !remote || !jeq(merged, remote);
     dirty = false;
@@ -115,6 +120,7 @@ async function syncNow(opts={}){
     const snap = JSON.stringify(S);
     if(needPush){
       const r = await fetch("/api/backup/"+S.cloud.code, {method:"PUT", keepalive:true, headers:{"content-type":"application/json"}, body:JSON.stringify({state:JSON.parse(snap), at:new Date().toISOString()})});
+      if(r.status===409){ clearTimeout(syncT); syncT = setTimeout(()=>syncNow({pull:true}), 1500); }
       if(!r.ok) throw 0;
     }
     try{ localStorage.setItem(BASE_KEY, snap); }catch(e){} lastSync = new Date(); syncErr = false;
@@ -124,14 +130,19 @@ async function syncNow(opts={}){
 }
 /* link this device to another device's code: both histories are added together */
 async function linkDevice(raw){
-  const code = String(raw||"").toLowerCase().replace(/[^a-z0-9]/g,"");
+  let code = String(raw||"").toLowerCase().replace(/[^a-z0-9]/g,"");
   if(!/^[a-z2-9]{16}$/.test(code)){ toast("That code should be 16 letters and numbers."); return; }
   if(code===S.cloud?.code){ toast("This device already uses that code."); return; }
   try{
     await syncNow();
-    const remote = await pullCloud(code);
+    let remote = await pullCloud(code);
+    for(let hop=0; hop<3 && remote && remote.movedTo; hop++){ code = remote.movedTo; remote = await pullCloud(code); }
     if(!remote){ toast("No backup found for that code."); return; }
     const old = S.cloud?.code;
+    if(code===old){ toast("This device already uses that code."); return; }
+    /* leave a note on the old code so any other device still using it follows along */
+    if(old){ const stub = Object.assign({}, loadBase() || S, {movedTo:code});
+      await fetch("/api/backup/"+old, {method:"PUT", headers:{"content-type":"application/json"}, body:JSON.stringify({state:stub})}).catch(()=>{}); }
     S = mergeState(S, remote, {}); S.cloud = {code, since:today(), was:old};
     try{ localStorage.setItem(KEY, JSON.stringify(S)); localStorage.removeItem(BASE_KEY); }catch(e){}
     dirty = true; await syncNow({pull:true});
