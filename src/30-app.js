@@ -6,7 +6,7 @@ function renderTabs(){
   const list = COACH_MODE ? [["tutor","Coach","chat"],["topics","Lessons","book"],["practice","Structured","target"]] : S.role==="parent" ? [["parenthome","Rewards","gift"]] : TABS;
   document.querySelector("nav.tabs").hidden = S.role==="parent" || (!S.name && !COACH_MODE);
   $("#tabs").style.gridTemplateColumns = `repeat(${list.length},1fr)`;
-  const cur = ["quiz","game","structured"].includes(tab) ? "practice" : tab==="me" ? "rewards" : tab==="parent" ? "rewards" : tab;
+  const cur = ["quiz","game","structured"].includes(tab) ? "practice" : tab==="lesson" ? "topics" : tab==="me" ? "rewards" : tab==="parent" ? "rewards" : tab;
   $("#tabs").innerHTML = list.map(([id,label,ic])=>`<button class="${cur===id?"on":""}" data-tab="${id}" aria-current="${cur===id?"page":"false"}">${ico(ic)}<span>${label}</span></button>`).join("");
   $("#tabs").querySelectorAll("button").forEach(b=>b.onclick=()=>go(b.dataset.tab));
 }
@@ -36,7 +36,7 @@ function render(){
   if(COACH_MODE && !["tutor","topics","practice","structured"].includes(tab)) tab="tutor";
   if(S.role==="parent" && S.name) tab="parenthome"; else if(tab==="parenthome") tab="home";
   if(!S.name){ return COACH_MODE ? viewCoachWelcome(v) : viewWelcome(v); }
-  ({home:viewHome, topics:viewTopics, tutor:viewTutor, practice:viewPractice, me:viewMe, quiz:viewQuiz, game:viewGame, structured:viewStructured, rewards:viewRewards, parent:viewParent, parenthome:viewParentHome})[tab](v);
+  ({home:viewHome, topics:viewTopics, tutor:viewTutor, practice:viewPractice, me:viewMe, quiz:viewQuiz, game:viewGame, structured:viewStructured, rewards:viewRewards, parent:viewParent, parenthome:viewParentHome, lesson:viewLesson})[tab](v);
 }
 
 /* =================== WELCOME =================== */
@@ -166,7 +166,7 @@ function viewTopic(v, t){
   <div class="hero subj s-${t.s}"><div class="circuit"></div><span class="eyebrow">${s.code} · Topic ${topicsOf(t.s).indexOf(t)+1}</span><h2>${esc(t.name)}</h2>
    <div class="row" style="flex-wrap:nowrap"><div class="bar" style="flex:1;background:rgba(255,255,255,.25)"><i style="width:${p||0}%;background:#FFC94A"></i></div><b style="font-size:14px">${MLABEL[ms]}${p!==null?" · "+p+"%":""}</b></div></div>
   <div class="card s-${t.s}"><span class="eyebrow">What you'll learn</span><ul class="learnlist" style="margin-top:8px">${t.learn.map((x,k)=>`<li><span>${"abcdefg"[k]}</span><div>${esc(x)}</div></li>`).join("")}</ul></div>
-  <div class="card s-${t.s}"><span class="eyebrow">Picture lessons</span><p style="margin:6px 0 0">Step-by-step lessons with diagrams, ⚠️ Tricky Bits and ❌ Common Mistakes for this topic are coming in the next update. Until then, Coach can teach it to you with pictures.</p></div>
+  ${lessonCard(t)}
   <div class="grid2 s-${t.s}">
     <button class="btn gold" id="tQuiz" ${nQ?"":"disabled"}>Quiz me (5)</button>
     <a class="btn sub" href="${esc(coachLink({t:t.id, m:"lesson"}))}" target="_blank" rel="noopener">Learn with Coach ↗</a>
@@ -177,4 +177,5 @@ function viewTopic(v, t){
   ${st?.att?`<div class="card"><span class="eyebrow">Your record</span><div class="stats" style="margin-top:8px">${[["Answered",st.att],["Correct",Math.round(st.ok/st.att*100)+"%"],["Best quiz",st.quiz?st.best+"%":"–"]].map(([a,b])=>`<div class="stat" style="background:var(--bg)"><b>${b}</b><span>${a}</span></div>`).join("")}</div><p class="muted" style="margin:8px 0 0;font-size:13px">Time spent ${fmtTime(st.time)} · last studied ${fmtDate(st.last)}</p></div>`:""}`;
   $("#bk").onclick = ()=>{ go("topics"); };
   $("#tQuiz").onclick = ()=>startQuiz({mode:"topic", topics:[t.id], n:5, title:t.name});
+  if($("#tLesson")) $("#tLesson").onclick = ()=>startLesson(t.id, S.lessonPos?.[t.id]||0);
 }

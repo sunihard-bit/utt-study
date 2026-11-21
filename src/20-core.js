@@ -167,6 +167,7 @@ function answerText(q){
   if(q.ty==="fill") return q.a[0];
   if(q.ty==="order") return q.o.join(" → ");
   if(q.ty==="match") return q.o.map(p=>p[0]+" = "+p[1]).join("; ");
+  if(q.ty==="trace") return traceAnswerText(q);
   return "";
 }
 

@@ -43,6 +43,7 @@ function checkItem(q, it, val){
   if(q.ty==="fill") return [q.a.some(a=>norm(a)===norm(val)), val];
   if(q.ty==="order") return [it.cur.every((x,k)=>x===k), it.cur.map(k=>q.o[k]).join(" → ")];
   if(q.ty==="match"){ const ok = q.o.every((p,k)=>it.pick[k]===p[1]); return [ok, q.o.map((p,k)=>p[0]+" = "+(it.pick[k]||"?")).join("; ")]; }
+  if(q.ty==="trace"){ const r = traceCheck(q, val); return [r.every(Boolean), `${r.filter(Boolean).length}/${r.length} boxes right`]; }
   return [false,""];
 }
 function submitAnswer(val){
@@ -60,7 +61,7 @@ function submitAnswer(val){
 }
 function qBody(q, it, showFb){
   const sub = `s-${q.s}`;
-  let h = `<div class="qtext">${esc(q.q)}</div>${q.code?`<pre class="qcode">${esc(q.code)}</pre>`:""}`;
+  let h = `<div class="qtext">${esc(q.q)}</div>${q.code?`<pre class="qcode">${esc(q.code)}</pre>`:""}${q.fc?flowSVG(q.fc):""}`;
   if(q.ty==="mc"){
     h += `<div class="opts">${it.ord.map((k,j)=>{ const cls = !showFb ? "" : k===q.a ? "ok" : (it.val===j ? "bad" : ""); return `<button class="opt ${cls}" data-v="${j}" ${showFb?"disabled":""}><span class="L">${"ABCD"[j]}</span><span>${esc(q.o[k])}</span></button>`; }).join("")}</div>`;
   } else if(q.ty==="tf"){
@@ -73,6 +74,8 @@ function qBody(q, it, showFb){
   } else if(q.ty==="match"){
     h += `<div class="matchgrid">${q.o.map((p,k)=>`<div class="matchrow ${showFb?(it.pick[k]===p[1]?"ok":"bad"):""}"><span class="l">${esc(p[0])}</span><select class="field" data-m="${k}" ${showFb?"disabled":""} aria-label="Match for ${esc(p[0])}"><option value="">Choose…</option>${it.rights.map(r=>`<option ${it.pick[k]===r?"selected":""}>${esc(r)}</option>`).join("")}</select></div>`).join("")}</div>
     ${showFb?"":`<button class="btn sub block" id="matchGo">${Q.exam?"Save and next":"Check my matches"}</button>`}`;
+  } else if(q.ty==="trace"){
+    h += traceQHTML(q, it, showFb);
   }
   return `<div class="${sub}" style="display:flex;flex-direction:column;gap:12px">${h}</div>`;
 }
@@ -84,6 +87,8 @@ function bindQ(v, q, it){
   v.querySelectorAll("[data-dn]").forEach(b=>b.onclick=()=>{ const j=+b.dataset.dn; [it.cur[j+1],it.cur[j]]=[it.cur[j],it.cur[j+1]]; render(); });
   if($("#ordGo")) $("#ordGo").onclick=()=>submitAnswer(it.cur.slice());
   v.querySelectorAll("[data-m]").forEach(s=>s.onchange=()=>{ it.pick[+s.dataset.m]=s.value; });
+  if($("#trGo")) $("#trGo").onclick=()=>{ const vals=[...v.querySelectorAll("[data-b]")].sort((a,b)=>a.dataset.b-b.dataset.b).map(x=>x.value.trim()); if(vals.some(x=>!x)){ toast("Fill in every blank box first."); return; } submitAnswer(vals); };
+  v.querySelectorAll("[data-b]").forEach(x=>x.oninput=x.onchange=()=>{ (it.val ||= [])[+x.dataset.b]=x.value.trim(); });
   if($("#matchGo")) $("#matchGo").onclick=()=>{ if(it.pick.some(x=>!x)){ toast("Match every item first."); return; } submitAnswer(it.pick.slice()); };
 }
 function viewQuiz(v){
@@ -172,6 +177,7 @@ function viewPractice(v){
   <div class="modelist s-${s.id}">
     ${mode("📚","Practice by topic",`Pick any of the ${topicsOf(s.id).length} ${s.code} topics`,"pTopic")}
     ${mode("🔀","Mixed revision",`10 questions across ${s.name}${dueS?`, including ${dueS} due for review`:""}`,"pMixed")}
+    ${s.id==="logc"?mode("▦","Trace table practice",`Fill in the blanks in real trace tables · ${S.n.trace||0}/10 for the Trace Table Pro badge`,"pTrace"):""}
     ${mode("⏱️","Exam simulation",`${esc(s.sim.label)} ${Math.min(s.sim.n,nS)} questions, ${Math.max(5,Math.round(s.sim.min*Math.min(s.sim.n,nS)/s.sim.n))} minutes.`,"pExam")}
     <a class="mode" href="${esc(coachLink({s:s.id, m:"struct"}))}" target="_blank" rel="noopener"><span class="mi">✍️</span><span><b>Structured questions</b><span class="d">Type a long answer and the Coach marks it: +${XP.structuredBase} XP plus ${XP.perMark} per mark</span></span><span class="go">↗</span></a>
   </div>
@@ -181,6 +187,7 @@ function viewPractice(v){
   $("#pDaily").onclick = ()=>{ if(S.daily===today()){ toast("Today's challenge is done. Come back tomorrow!"); return; } startQuiz({mode:"daily", ids:[pickDaily().id], title:"Daily challenge"}); };
   $("#pFix").onclick = ()=>startQuiz({mode:"fix", n:8, title:"Fix My Weak Spots"});
   $("#pTopic").onclick = ()=>go("topics");
+  if($("#pTrace")) $("#pTrace").onclick = ()=>startQuiz({mode:"mixed", ids:shuffle(BANK.filter(q=>q.ty==="trace").map(q=>q.id)).slice(0,5), title:"Trace table practice"});
   $("#pMixed").onclick = ()=>startQuiz({mode:"mixed", s:s.id, n:10, title:`${s.name} mixed revision`});
   $("#pExam").onclick = ()=>{ const n=Math.min(s.sim.n,nS), min=Math.max(5,Math.round(s.sim.min*n/s.sim.n));
     modal(`<span class="eyebrow">${s.code} · exam simulation</span><h2>${n} questions, ${min} minutes</h2><p class="muted" style="margin:0">No answers are shown until the end, just like the real thing. Unanswered questions count as wrong.</p><button class="btn gold block" id="exGo">Start the clock</button><button class="btn line block" id="exNo">Not now</button>`, (r,close)=>{ $("#exNo").onclick=close; $("#exGo").onclick=()=>{ close(); startQuiz({mode:"exam", s:s.id, n, min, title:`${s.code} exam simulation`}); }; }); };
