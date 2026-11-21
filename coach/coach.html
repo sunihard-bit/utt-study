@@ -1,0 +1,2047 @@
+<title>UTT Study Coach</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Figtree:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Phone-first app shell: sticky score bar, one view at a time, tab bar fixed at the bottom.
+   Circuit teal brand, one accent per subject (blue = Networks, violet = Logic & Python, orange = Hardware), gold for rewards, red for mistakes. */
+:root{
+  --bg:#EEF4F4; --paper:#FFFFFF; --ink:#11252A; --muted:#566C72; --line:#D2E0E1;
+  --brand:#0E7C7B; --brand-2:#0A5A5A; --brand-soft:#D8EEED; --on-brand:#FFFFFF;
+  --gold:#C98A0B; --gold-soft:#FBEFD2;
+  --red:#C23B33; --red-soft:#F8E1DE;
+  --ok:#1E8A4C; --ok-soft:#DDF1E4;
+  --ntwk:#2F6FEB; --ntwk-soft:#E3ECFD; --logc:#7A3FD1; --logc-soft:#EEE6FA; --cohw:#D0581A; --cohw-soft:#FBE7DA;
+  --sub:var(--brand); --sub-soft:var(--brand-soft);
+  --f-display:"Space Grotesk","Segoe UI",system-ui,sans-serif;
+  --f-body:"Figtree","Segoe UI",system-ui,sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,Menlo,Consolas,monospace;
+  --nav-h:64px; --r:14px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0B1517; --paper:#13211F; --ink:#E4F0EF; --muted:#90A8A6; --line:#24383A;
+  --brand:#3CC2BC; --brand-2:#0D5452; --brand-soft:#143A39; --on-brand:#04201F;
+  --gold:#F0B93A; --gold-soft:#3A2E12; --red:#F07A70; --red-soft:#3D1D1A; --ok:#5BD08A; --ok-soft:#143424;
+  --ntwk:#82A9F7; --ntwk-soft:#1A2948; --logc:#B892F2; --logc-soft:#2B2143; --cohw:#F39A62; --cohw-soft:#3D2616; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0B1517; --paper:#13211F; --ink:#E4F0EF; --muted:#90A8A6; --line:#24383A;
+  --brand:#3CC2BC; --brand-2:#0D5452; --brand-soft:#143A39; --on-brand:#04201F;
+  --gold:#F0B93A; --gold-soft:#3A2E12; --red:#F07A70; --red-soft:#3D1D1A; --ok:#5BD08A; --ok-soft:#143424;
+  --ntwk:#82A9F7; --ntwk-soft:#1A2948; --logc:#B892F2; --logc-soft:#2B2143; --cohw:#F39A62; --cohw-soft:#3D2616; color-scheme:dark}
+.s-ntwk{--sub:var(--ntwk);--sub-soft:var(--ntwk-soft)} .s-logc{--sub:var(--logc);--sub-soft:var(--logc-soft)} .s-cohw{--sub:var(--cohw);--sub-soft:var(--cohw-soft)}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{background:var(--bg);color:var(--ink)}
+body{margin:0;font-family:var(--f-body);font-size:16px;line-height:1.5;padding-bottom:calc(var(--nav-h) + env(safe-area-inset-bottom,0px) + 12px)}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:30;background:var(--brand-2)}
+button,input,textarea,select{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+h1,h2,h3,h4{font-family:var(--f-display);line-height:1.15;text-wrap:balance;margin:0;letter-spacing:-.01em}
+.wrap{max-width:720px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+code,.mono{font-family:var(--f-mono)}
+
+/* top bar */
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--brand-2);color:#fff}
+.top .wrap{display:flex;align-items:center;gap:10px;padding-block:10px}
+.brand{font-family:var(--f-display);font-weight:700;font-size:19px;flex:1;min-width:0;display:flex;align-items:center;gap:8px;white-space:nowrap;overflow:hidden}
+.brand small{font-family:var(--f-mono);font-weight:400;font-size:11px;opacity:.75;letter-spacing:.06em}
+.pill{display:inline-flex;align-items:center;gap:5px;font-weight:700;font-size:14px;padding:4px 10px;border-radius:999px;background:rgba(255,255,255,.14);font-variant-numeric:tabular-nums;white-space:nowrap}
+.pill svg{width:16px;height:16px}
+.pill.flame{color:#FFD27A}
+.pill.coin{color:#FFE08A}
+.pill a{color:inherit;text-decoration:none}
+.xpbar{height:5px;background:rgba(255,255,255,.18)}
+.xpbar i{display:block;height:100%;background:#FFC94A;transition:width .6s ease}
+.avatarbtn{width:38px;height:38px;border-radius:50%;border:2px solid rgba(255,255,255,.5);background:rgba(255,255,255,.15);color:#fff;font-weight:800;font-size:18px;display:grid;place-items:center;flex:none;padding:0}
+.coinico{display:inline-grid;place-items:center;width:16px;height:16px;border-radius:50%;background:#F4C84A;color:#5A3D00;font-size:10px;font-weight:800;font-family:var(--f-mono)}
+
+/* views */
+main{padding-block:16px 8px}
+.view{display:flex;flex-direction:column;gap:14px}
+.card{background:var(--paper);border:1px solid var(--line);border-radius:var(--r);padding:16px;min-width:0}
+.card h3{font-size:18px;margin-bottom:6px}
+.eyebrow{font-family:var(--f-mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.muted{color:var(--muted)}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.between{justify-content:space-between}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.btn{border:0;border-radius:12px;padding:12px 16px;font-weight:700;background:var(--brand);color:var(--on-brand);display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:48px;text-align:center;text-decoration:none}
+.btn:active{transform:translateY(1px)}
+.btn svg{width:20px;height:20px;flex:none}
+.btn.ghost{background:var(--brand-soft);color:var(--brand)}
+.btn.gold{background:var(--gold);color:#241800}
+.btn.line{background:transparent;border:1.5px solid var(--line);color:var(--ink)}
+.btn.red{background:var(--red);color:#fff}
+.btn.sub{background:var(--sub);color:#fff}
+.btn.subghost{background:var(--sub-soft);color:var(--sub)}
+.btn.sm{min-height:38px;padding:7px 12px;font-size:14px;border-radius:10px}
+.btn.block{width:100%}
+.btn[disabled]{opacity:.5;cursor:not-allowed}
+.chip{border:1.5px solid var(--line);background:var(--paper);border-radius:999px;padding:8px 13px;font-size:14px;font-weight:600;color:var(--ink);text-decoration:none}
+.chip:hover{border-color:var(--brand)}
+.bar{height:8px;border-radius:99px;background:var(--line);overflow:hidden}
+.bar i{display:block;height:100%;background:var(--sub);border-radius:99px;transition:width .5s}
+.back{border:0;background:none;color:var(--brand);font-weight:700;padding:6px 0;align-self:flex-start;min-height:36px}
+.banner{background:var(--gold-soft);border:1px solid var(--gold);border-radius:12px;padding:10px 12px;font-size:14px}
+.note{background:var(--brand-soft);border-radius:12px;padding:10px 12px;font-size:14px}
+
+/* hero with a faint circuit-board pattern */
+.hero{background:var(--brand);color:var(--on-brand);border-radius:18px;padding:18px;display:flex;flex-direction:column;gap:12px;position:relative;overflow:hidden}
+.hero.subj{background:var(--sub);color:#fff}
+.hero h2{font-size:26px}
+.hero .circuit{position:absolute;inset:0;pointer-events:none;opacity:.12;background:
+  radial-gradient(circle at 20px 20px,currentColor 2.5px,transparent 3.5px) 0 0/80px 80px,
+  linear-gradient(90deg,transparent 19px,currentColor 19px 21px,transparent 21px) 0 0/80px 40px,
+  linear-gradient(0deg,transparent 59px,currentColor 59px 61px,transparent 61px) 20px 0/80px 80px;
+  -webkit-mask-image:linear-gradient(110deg,transparent 35%,#000 85%);mask-image:linear-gradient(110deg,transparent 35%,#000 85%)}
+.hero > *{position:relative}
+.hero .eyebrow{color:inherit;opacity:.85}
+.goal{display:flex;align-items:center;gap:14px}
+.ring{--p:0;width:66px;height:66px;border-radius:50%;background:conic-gradient(#FFC94A calc(var(--p)*1%),rgba(255,255,255,.22) 0);display:grid;place-items:center;flex:none}
+.ring b{width:52px;height:52px;border-radius:50%;background:var(--brand);display:grid;place-items:center;font-size:13px;font-variant-numeric:tabular-nums}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.stat{background:rgba(255,255,255,.13);border-radius:12px;padding:8px 10px;min-width:0}
+.stat b{display:block;font-family:var(--f-display);font-size:22px;font-variant-numeric:tabular-nums}
+.stat span{font-size:12px;opacity:.88}
+.big{font-family:var(--f-display);font-size:44px;font-weight:700;font-variant-numeric:tabular-nums;line-height:1}
+
+/* subject cards */
+.subjects{display:flex;flex-direction:column;gap:10px}
+.subjcard{display:grid;grid-template-columns:52px 1fr auto;gap:12px;align-items:center;background:var(--paper);border:1px solid var(--line);border-left:5px solid var(--sub);border-radius:14px;padding:12px 14px;text-align:left;width:100%}
+.subjcard .ic{width:52px;height:52px;border-radius:14px;background:var(--sub-soft);color:var(--sub);display:grid;place-items:center}
+.subjcard .ic svg{width:30px;height:30px}
+.subjcard b{display:block;font-family:var(--f-display);font-size:17px;line-height:1.2}
+.subjcard .code{font-family:var(--f-mono);font-size:11px;color:var(--sub);letter-spacing:.06em}
+.subjcard .pct{font-family:var(--f-display);font-weight:700;font-size:20px;color:var(--sub);font-variant-numeric:tabular-nums}
+.segsub{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.segsub button{border:1.5px solid var(--line);background:var(--paper);border-radius:12px;padding:8px 4px;font-weight:700;font-size:13px;min-height:48px;display:flex;flex-direction:column;align-items:center;gap:0;line-height:1.2}
+.segsub button small{font-family:var(--f-mono);font-size:10px;font-weight:400;color:var(--muted)}
+.segsub button.on{border-color:var(--sub);background:var(--sub-soft);color:var(--sub)}
+
+/* topics */
+.sec-h{display:flex;align-items:baseline;gap:8px;margin-top:6px}
+.sec-h h3{font-size:16px}
+.tlist{display:flex;flex-direction:column;gap:8px}
+.titem{display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:center;background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:12px;text-align:left;width:100%}
+.titem .num{font-family:var(--f-mono);font-size:12px;color:var(--sub);font-weight:600;width:26px}
+.titem b{display:block;font-weight:700;line-height:1.25}
+.titem .sub{font-size:13px;color:var(--muted)}
+.mastery{font-family:var(--f-mono);font-size:12px;font-weight:600;padding:3px 8px;border-radius:99px;background:var(--line);color:var(--muted);white-space:nowrap}
+.mastery.good{background:var(--ok-soft);color:var(--ok)}
+.mastery.mid{background:var(--gold-soft);color:var(--gold)}
+.mastery.low{background:var(--red-soft);color:var(--red)}
+.notes{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:6px}
+.learnlist{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:6px}
+.learnlist li{display:grid;grid-template-columns:26px 1fr;gap:8px;align-items:start}
+.learnlist li span{font-family:var(--f-mono);font-weight:700;color:var(--sub);background:var(--sub-soft);border-radius:7px;text-align:center;font-size:12px;padding:2px 0}
+.map{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
+.tile{border-radius:12px;padding:10px;display:flex;flex-direction:column;gap:2px;border:1.5px solid var(--line);background:var(--paper);text-align:left;min-width:0}
+.tile b{font-size:13px;line-height:1.25}
+.tile span{font-size:11px;color:var(--muted)}
+.tile.g{border-color:var(--ok);background:var(--ok-soft)} .tile.a{border-color:var(--gold);background:var(--gold-soft)} .tile.r{border-color:var(--red);background:var(--red-soft)}
+.legend{display:flex;gap:10px;flex-wrap:wrap;font-size:12px;color:var(--muted)}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:4px;vertical-align:-1px}
+table.stt{width:100%;border-collapse:collapse;font-size:13px;font-variant-numeric:tabular-nums}
+table.stt th,table.stt td{padding:6px 6px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
+table.stt th:first-child,table.stt td:first-child{text-align:left;white-space:normal}
+table.stt th{font-family:var(--f-mono);font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.tblwrap{overflow-x:auto;margin:0 -4px}
+
+/* markdown */
+.md{min-width:0;overflow-wrap:anywhere}
+.md p{margin:0 0 10px}
+.md h3,.md h4,.md h5,.md h6{margin:14px 0 6px;font-size:17px}
+.md ul,.md ol{margin:0 0 10px;padding-left:22px}
+.md li{margin-bottom:4px}
+.md code{font-family:var(--f-mono);font-size:.9em;background:var(--brand-soft);padding:1px 5px;border-radius:5px}
+.md pre{font-family:var(--f-mono);font-size:13px;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px;overflow-x:auto;white-space:pre;margin:0 0 10px}
+.md .tbl{overflow-x:auto;margin:0 0 10px;border:1px solid var(--line);border-radius:10px}
+.md table{border-collapse:collapse;width:100%;font-size:14px;font-variant-numeric:tabular-nums}
+.md th,.md td{padding:6px 9px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap}
+.md th{background:var(--brand-soft);font-weight:700}
+.md tr:last-child td{border-bottom:0}
+.md hr{border:0;border-top:1px dashed var(--line);margin:12px 0}
+.thinking{display:inline-flex;gap:6px;align-items:center;color:var(--muted);font-style:italic}
+.dots i{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--brand);margin-right:3px;animation:b 1s infinite}
+.dots i:nth-child(2){animation-delay:.15s}.dots i:nth-child(3){animation-delay:.3s}
+@keyframes b{0%,80%,100%{opacity:.25}40%{opacity:1}}
+
+/* quiz */
+.qcard{display:flex;flex-direction:column;gap:12px}
+.qtop{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.qprog{display:flex;gap:4px;flex:1}
+.qprog i{flex:1;height:6px;border-radius:9px;background:var(--line)}
+.qprog i.ok{background:var(--ok)}.qprog i.bad{background:var(--red)}.qprog i.now{background:var(--gold)}
+.qtext{font-size:18px;font-weight:600}
+.qcode{font-family:var(--f-mono);font-size:14px;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px 12px;white-space:pre;overflow-x:auto;margin:0}
+.opts{display:flex;flex-direction:column;gap:8px}
+.opt{display:grid;grid-template-columns:32px 1fr;gap:10px;align-items:center;text-align:left;padding:12px;border-radius:12px;border:1.5px solid var(--line);background:var(--paper);width:100%;min-height:54px}
+.opt .L{font-family:var(--f-mono);font-weight:700;width:32px;height:32px;border-radius:8px;display:grid;place-items:center;background:var(--bg)}
+.opt.ok{border-color:var(--ok);background:var(--ok-soft)}
+.opt.ok .L{background:var(--ok);color:#fff}
+.opt.bad{border-color:var(--red);background:var(--red-soft)}
+.opt.bad .L{background:var(--red);color:#fff}
+.opt.sel{border-color:var(--sub);background:var(--sub-soft)}
+.opt[disabled]{cursor:default}
+.fb{border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;gap:6px}
+.fb.ok{background:var(--ok-soft)}
+.fb.bad{background:var(--red-soft)}
+.fb h4{font-size:17px}
+.lbl{font-family:var(--f-mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.fixbox{border-left:3px solid var(--gold);padding-left:10px}
+.ordlist{display:flex;flex-direction:column;gap:6px}
+.orditem{display:grid;grid-template-columns:28px 1fr auto;gap:8px;align-items:center;border:1.5px solid var(--line);border-radius:12px;padding:8px 10px;background:var(--paper)}
+.orditem .n{font-family:var(--f-mono);font-weight:700;color:var(--sub)}
+.orditem .mv{display:flex;gap:4px}
+.orditem .mv button{width:38px;height:38px;border-radius:10px;border:1.5px solid var(--line);background:var(--bg);font-size:16px;padding:0}
+.orditem.ok{border-color:var(--ok);background:var(--ok-soft)} .orditem.bad{border-color:var(--red);background:var(--red-soft)}
+.matchgrid{display:flex;flex-direction:column;gap:8px}
+.matchrow{display:grid;grid-template-columns:1fr 1fr;gap:8px;align-items:center}
+.matchrow .l{font-weight:600;font-size:15px}
+.matchrow.ok select{border-color:var(--ok)} .matchrow.bad select{border-color:var(--red)}
+.timerpill{font-family:var(--f-mono);font-weight:700;padding:4px 10px;border-radius:99px;background:var(--gold-soft);color:var(--gold)}
+
+/* chat */
+.chat{display:flex;flex-direction:column;gap:10px;min-height:40vh}
+.msg{max-width:92%;padding:10px 13px;border-radius:16px;min-width:0}
+.msg.me{align-self:flex-end;background:var(--brand);color:var(--on-brand);border-bottom-right-radius:4px;white-space:pre-wrap;overflow-wrap:anywhere}
+.msg.ai{align-self:flex-start;background:var(--paper);border:1px solid var(--line);border-bottom-left-radius:4px;width:92%}
+.msg.ai .md p:last-child{margin-bottom:0}
+.msg .imgtag{display:block;font-size:12px;opacity:.85;margin-top:4px}
+.composer{position:sticky;bottom:calc(var(--nav-h) + env(safe-area-inset-bottom,0px) + 4px);background:var(--bg);padding-block:8px;display:flex;flex-direction:column;gap:8px;z-index:5}
+.cbox{display:flex;gap:8px;align-items:flex-end;background:var(--paper);border:1.5px solid var(--line);border-radius:16px;padding:6px}
+.cbox textarea{flex:1;min-width:0;border:0;background:transparent;resize:none;padding:8px;max-height:140px;outline:none}
+.iconbtn{width:44px;height:44px;border-radius:12px;border:0;display:grid;place-items:center;background:var(--brand-soft);color:var(--brand);flex:none}
+.iconbtn.send{background:var(--brand);color:var(--on-brand)}
+.iconbtn svg{width:20px;height:20px}
+.chips{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px;scrollbar-width:none}
+.chips .chip{white-space:nowrap;flex:none}
+.attach{display:flex;align-items:center;gap:8px;font-size:13px;background:var(--gold-soft);border-radius:10px;padding:6px 10px}
+.attach img{width:36px;height:36px;object-fit:cover;border-radius:6px}
+.integrity{display:flex;gap:10px;align-items:flex-start;background:var(--paper);border:1px dashed var(--brand);border-radius:12px;padding:10px 12px;font-size:13px}
+.integrity b{color:var(--brand)}
+
+/* forms */
+textarea.field,input.field,select.field{width:100%;border:1.5px solid var(--line);border-radius:12px;background:var(--paper);padding:10px 12px;min-height:46px}
+textarea.field{min-height:96px;resize:vertical;font-family:var(--f-body)}
+textarea.mono,input.mono{font-family:var(--f-mono);font-size:15px}
+label.lab{font-weight:600;font-size:14px;display:block;margin-bottom:4px}
+
+/* badges */
+.badges{display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:10px}
+.badge{text-align:center;padding:12px 6px;border-radius:12px;border:1px solid var(--line);background:var(--paper);display:flex;flex-direction:column;align-items:center;gap:4px}
+.badge .medal{width:48px;height:48px;border-radius:50%;display:grid;place-items:center;font-family:var(--f-display);font-weight:700;font-size:18px;background:var(--line);color:var(--muted);filter:grayscale(1)}
+.badge.got .medal{background:var(--gold);color:#241800;box-shadow:0 0 0 3px var(--gold-soft);filter:none}
+.badge:not(.got){opacity:.6}
+.badge b{font-size:13px;line-height:1.2}
+.badge span{font-size:11px;color:var(--muted);line-height:1.25}
+
+/* speed games */
+.gcard{background:var(--paper);border:2px solid var(--line);border-radius:18px;padding:20px 16px;text-align:center;min-height:150px;display:flex;flex-direction:column;justify-content:center;gap:10px;transition:transform .15s}
+.gcard.flashok{border-color:var(--ok);background:var(--ok-soft)}
+.gcard.flashbad{border-color:var(--red);background:var(--red-soft);animation:shake .3s}
+@keyframes shake{25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+.gcard .tx{font-size:20px;font-weight:700}
+.gcard pre{font-family:var(--f-mono);font-size:14px;text-align:left;background:var(--bg);border-radius:10px;padding:10px;margin:0;white-space:pre;overflow-x:auto}
+.gopts{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.gopts .btn{min-height:62px;font-size:16px;background:var(--sub);color:#fff;white-space:pre-line}
+.timer{height:10px;border-radius:9px;background:var(--line);overflow:hidden}
+.timer i{display:block;height:100%;background:var(--gold);transition:width .25s linear}
+.mistake{border-left:3px solid var(--red);padding:4px 0 4px 10px;display:flex;flex-direction:column;gap:4px}
+.score{display:inline-block;font-family:var(--f-mono);font-weight:700;padding:2px 8px;border-radius:8px;background:var(--gold-soft);color:var(--gold);white-space:nowrap}
+.part{border-top:1px dashed var(--line);padding-top:12px;display:flex;flex-direction:column;gap:6px}
+.modelist{display:flex;flex-direction:column;gap:10px}
+.mode{display:grid;grid-template-columns:46px 1fr auto;gap:12px;align-items:center;background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:12px;text-align:left;width:100%;text-decoration:none;color:var(--ink)}
+.mode .mi{width:46px;height:46px;border-radius:12px;background:var(--brand-soft);display:grid;place-items:center;font-size:22px}
+.mode b{display:block;line-height:1.25}
+.mode span.d{font-size:13px;color:var(--muted)}
+.mode .go{color:var(--brand);font-weight:700;font-size:20px}
+
+/* nav */
+nav.tabs{position:fixed;left:0;right:0;bottom:0;z-index:25;background:var(--paper);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom,0px);padding-left:env(safe-area-inset-left,0px);padding-right:env(safe-area-inset-right,0px)}
+nav.tabs .in{max-width:720px;margin:0 auto;display:grid;grid-template-columns:repeat(5,1fr);height:var(--nav-h)}
+nav.tabs button{border:0;background:transparent;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-size:11px;font-weight:600;color:var(--muted)}
+nav.tabs button svg{width:24px;height:24px}
+nav.tabs button.on{color:var(--brand)}
+nav.tabs button.on svg{stroke-width:2.4}
+
+.toast{position:fixed;left:50%;transform:translateX(-50%) translateY(20px);bottom:calc(var(--nav-h) + env(safe-area-inset-bottom,0px) + 16px);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:12px;font-weight:700;opacity:0;transition:.25s;z-index:40;pointer-events:none;max-width:calc(100% - 32px);text-align:center}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.toast.gold{background:var(--gold);color:#241800}
+.linkcard{display:flex;flex-direction:column;gap:2px;padding:12px;border:1px solid var(--line);border-radius:12px;text-decoration:none;color:var(--ink);background:var(--paper)}
+.seg{display:inline-flex;border:1.5px solid var(--line);border-radius:10px;overflow:hidden;flex-wrap:wrap}
+.seg button{border:0;background:transparent;padding:8px 12px;font-weight:700;font-size:13px;min-height:38px}
+.seg button.on{background:var(--brand);color:var(--on-brand)}
+
+/* ---- themes bought in the shop (brand family only) ---- */
+.th-carnival{--brand:#6A2C9E;--brand-2:#4B1D73;--brand-soft:#EEE4F7}
+.th-maracas{--brand:#0F6FA8;--brand-2:#0B5480;--brand-soft:#DDEEF8}
+.th-ibis{--brand:#BF3A2B;--brand-2:#8E2A20;--brand-soft:#F9E0DC}
+.th-pan{--brand:#3E5566;--brand-2:#2B3D4A;--brand-soft:#E2E9EE}
+@media (prefers-color-scheme: dark){
+ :root:not([data-theme="light"]) .th-carnival{--brand:#B98AE6;--brand-2:#4B2470;--brand-soft:#2E1F40}
+ :root:not([data-theme="light"]) .th-maracas{--brand:#5BB8EA;--brand-2:#12507A;--brand-soft:#16324A}
+ :root:not([data-theme="light"]) .th-ibis{--brand:#F2857A;--brand-2:#7E261D;--brand-soft:#3D1E1B}
+ :root:not([data-theme="light"]) .th-pan{--brand:#9DB4C4;--brand-2:#2E4352;--brand-soft:#1E2A33}}
+:root[data-theme="dark"] .th-carnival{--brand:#B98AE6;--brand-2:#4B2470;--brand-soft:#2E1F40}
+:root[data-theme="dark"] .th-maracas{--brand:#5BB8EA;--brand-2:#12507A;--brand-soft:#16324A}
+:root[data-theme="dark"] .th-ibis{--brand:#F2857A;--brand-2:#7E261D;--brand-soft:#3D1E1B}
+:root[data-theme="dark"] .th-pan{--brand:#9DB4C4;--brand-2:#2E4352;--brand-soft:#1E2A33}
+
+/* ---- rewards ---- */
+.coinrow{display:flex;align-items:center;gap:10px}
+.coinbig{width:54px;height:54px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#FFE7A0,#E3A814 70%);display:grid;place-items:center;font-family:var(--f-display);font-weight:700;color:#5A3D00;font-size:20px;box-shadow:inset 0 -3px 0 rgba(0,0,0,.15)}
+.shop{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px}
+.item{border:1.5px solid var(--line);border-radius:14px;padding:12px;background:var(--paper);display:flex;flex-direction:column;gap:6px;align-items:flex-start;min-width:0}
+.item .ic{font-size:30px;line-height:1;height:36px;display:flex;align-items:center}
+.item .sw{width:36px;height:36px;border-radius:10px}
+.item b{font-size:14px;line-height:1.2}
+.item span{font-size:12px;color:var(--muted);line-height:1.3}
+.item.owned{border-color:var(--brand)}
+.price{font-family:var(--f-mono);font-weight:700;font-size:13px;display:inline-flex;align-items:center;gap:4px}
+.empire{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px}
+.biz{border-radius:14px;padding:12px;display:flex;flex-direction:column;gap:4px;border:1.5px dashed var(--line);min-width:0}
+.biz .ic{font-size:30px;line-height:1}
+.biz b{font-size:14px}
+.biz span{font-size:12px;color:var(--muted);line-height:1.3}
+.biz.on{border-style:solid;border-color:var(--gold);background:var(--gold-soft)}
+.biz.off .ic{filter:grayscale(1);opacity:.35}
+.rreward{display:flex;flex-direction:column;gap:6px;padding:12px;border-radius:12px;background:var(--bg)}
+.rreward.ready{background:var(--gold-soft);border:1.5px solid var(--gold)}
+.pinpad{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;width:100%;max-width:260px}
+.pinpad button{min-height:54px;border-radius:12px;border:1.5px solid var(--line);background:var(--paper);font-size:20px;font-weight:700}
+.pindots{display:flex;gap:10px;justify-content:center;margin:6px 0}
+.pindots i{width:14px;height:14px;border-radius:50%;border:2px solid var(--brand)}
+.pindots i.on{background:var(--brand)}
+
+/* ---- modal ---- */
+.modal{position:fixed;inset:0;z-index:50;background:rgba(4,14,14,.62);display:grid;place-items:center;padding:max(16px,env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) max(16px,env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
+.modal .box{background:var(--paper);border-radius:20px;padding:22px;max-width:380px;width:100%;text-align:center;display:flex;flex-direction:column;gap:12px;align-items:center;animation:rise .35s ease;max-height:90vh;overflow:auto}
+@keyframes rise{from{transform:translateY(20px) scale(.96);opacity:0}}
+.chest{font-size:84px;line-height:1;cursor:pointer;border:0;background:none;animation:wob 1.2s infinite}
+@keyframes wob{0%,100%{transform:rotate(0)}20%{transform:rotate(-8deg)}40%{transform:rotate(8deg)}60%{transform:rotate(-4deg)}}
+.prize{font-size:64px;line-height:1;animation:rise .4s ease}
+.confetti{position:fixed;inset:0;pointer-events:none;z-index:60;overflow:hidden}
+.confetti i{position:absolute;top:-12px;width:8px;height:14px;border-radius:2px;animation:fall 1.8s ease-in forwards}
+@keyframes fall{to{transform:translateY(105vh) rotate(540deg)}}
+@media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}}
+@media (max-width:380px){.grid2{grid-template-columns:1fr}.hero h2{font-size:23px}.gopts{grid-template-columns:1fr}}
+
+/* ---- Coach diagrams ---- */
+.vis{display:flex;flex-direction:column;gap:8px;min-width:0;margin:0 0 12px}
+.vis-title{font-family:var(--f-display);font-weight:700;font-size:15px}
+.flow{display:flex;flex-direction:column;align-items:center;gap:0}
+.flow .fs{border:2px solid var(--brand);border-radius:6px;padding:8px 12px;background:var(--paper);display:flex;gap:10px;align-items:flex-start;width:100%;max-width:420px}
+.flow .fs .n{font-family:var(--f-mono);font-weight:700;width:24px;height:24px;border-radius:50%;display:grid;place-items:center;background:var(--brand-soft);color:var(--brand);flex:none;font-size:11px}
+.flow .fs b{display:block;font-size:14px}
+.flow .fs small{color:var(--muted);font-size:12px}
+.flow .fs.terminator{border-radius:999px;background:var(--brand-soft)}
+.flow .fs.io{transform:skewX(-12deg)} .flow .fs.io > *{transform:skewX(12deg)}
+.flow .fs.decision{border-color:var(--gold);background:var(--gold-soft);border-style:solid;border-width:2px 2px 2px 8px}
+.flow .ar{height:18px;display:grid;place-items:center;color:var(--muted);font-size:12px;line-height:1}
+.layers{display:flex;flex-direction:column;gap:4px}
+.lay{display:grid;grid-template-columns:28px auto 1fr;gap:10px;align-items:center;border-radius:8px;padding:7px 10px;background:color-mix(in srgb,var(--c) 18%,var(--paper));border-left:6px solid var(--c)}
+.lay .ln{font-family:var(--f-mono);font-weight:700;color:var(--c)}
+.lay b{font-size:14px}
+.lay small{font-size:12px;color:var(--muted);text-align:right}
+.cmp{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px}
+.cmp>div{border-radius:10px;padding:10px;background:var(--bg);border:1px solid var(--line)}
+.cmp h4{font-size:14px;margin-bottom:4px;color:var(--brand)}
+.cmp ul{margin:0;padding-left:18px;font-size:13px}
+</style>
+
+<header class="top">
+  <div class="wrap">
+    <button class="avatarbtn" id="hdrAv" aria-label="My progress"></button>
+    <div class="brand" id="brand">UTT Study Coach</div>
+    <span class="pill flame" id="hdrStreak" title="Day streak"></span>
+    <span class="pill coin" id="hdrCoins" title="Coins"></span>
+  </div>
+  <div class="xpbar"><i id="hdrBar" style="width:0%"></i></div>
+</header>
+
+<main class="wrap"><div id="view" class="view"></div></main>
+
+<nav class="tabs" aria-label="Sections"><div class="in" id="tabs"></div></nav>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<div id="modalRoot"></div>
+<input type="file" id="fileIn" accept="image/*" hidden>
+
+<script>
+/* =================== SUBJECTS & TOPICS (Areas of Study, in course-outline order) =================== */
+const SUBJECTS = [
+ {id:"ntwk", code:"NTWK1007", name:"Networks", full:"Introduction to Networks and Network Technologies", ic:"net",
+  pass:"Pass mark: 50% overall, and the final exam (50% of the grade) is a must-pass.",
+  assess:[["Lab exercises / review quiz",20],["Project",15],["Quiz",15],["Final exam (3 hrs, must pass)",50]],
+  sim:{n:25, min:35, label:"Final-exam style: mixed questions across all 9 areas, no feedback until the end."}},
+ {id:"logc", code:"LOGC1002", name:"Logic & Python", full:"Reasoning and Logic for Computing", ic:"code",
+  pass:"You must pass coursework (at least 50%) AND the final exam (at least 50%) separately.",
+  assess:[["Quiz (1 hr)",20],["Assignment (8 weeks)",15],["Assignment (3 weeks)",15],["Final exam (3 hrs, must pass)",50]],
+  sim:{n:20, min:30, label:"Final-exam style: flowcharts, Python, trace tables and predict-the-output, marked at the end."}},
+ {id:"cohw", code:"COHW1004", name:"Hardware", full:"Computer Hardware Essentials", ic:"chip",
+  pass:"Pass mark: 50% overall across the lab, quiz and project.",
+  assess:[["Lab exercises / review quiz",35],["Quiz (exam conditions)",45],["Project",20]],
+  sim:{n:25, min:35, label:"Quiz style (exam conditions): mixed questions across all 13 areas, marked at the end."}},
+];
+const SUBJ = Object.fromEntries(SUBJECTS.map(s=>[s.id,s]));
+
+const TOPICS = [
+ /* ---- NTWK1007 ---- */
+ {id:"n1",s:"ntwk",name:"Networking Fundamentals",short:"Components, topologies, peer-to-peer vs client/server, LAN/MAN/WAN",
+  learn:["Networking components, resources and geography","Networking topologies and access methods","Peer-to-peer and client/server network architectures","Classification of networks"]},
+ {id:"n2",s:"ntwk",name:"The OSI Model and TCP/IP Model",short:"The 7 layers, encapsulation, OSI vs TCP/IP",
+  learn:["The seven layers of the OSI model","Encapsulation and de-encapsulation","Comparing the OSI model and the TCP/IP model"]},
+ {id:"n3",s:"ntwk",name:"Network Media and Connectors",short:"T568A/B, IEEE 802.3, cables, distances, RJ45",
+  learn:["Ethernet standards: T568A, T568B, IEEE 802.3","Connection types, bandwidth, distance limits and connectors","Terminating and testing a UTP patch cable","Network media layout"]},
+ {id:"n4",s:"ntwk",name:"Wireless Networks",short:"IEEE 802.11 standards and wireless security",
+  learn:["Wireless standards (IEEE 802.11a/b/g/n/ac/ax)","Wireless security (WEP, WPA, WPA2, WPA3)"]},
+ {id:"n5",s:"ntwk",name:"Network Devices",short:"Hub vs switch vs router vs bridge vs access point",
+  learn:["Switches, bridges, routers, wireless access points, media converters","End devices"]},
+ {id:"n6",s:"ntwk",name:"IP Addressing",short:"IPv4, binary, classes, DHCP, subnetting",
+  learn:["How IPv4 addressing works","How IPv4 addresses are assigned (DHCP, static, APIPA)","Subnetting and why it's useful"]},
+ {id:"n7",s:"ntwk",name:"Wide Area Networks",short:"What a WAN is and how WANs are built",
+  learn:["What is a WAN","How WANs are established"]},
+ {id:"n8",s:"ntwk",name:"Network Security Basics",short:"Device hardening and physical security",
+  learn:["Device hardening: change default passwords, disable unused ports and services","Physical security of network devices"]},
+ {id:"n9",s:"ntwk",name:"Network Troubleshooting",short:"Methodology, tools and fixing real problems",
+  learn:["Troubleshooting tools: hardware and software","Troubleshooting physical and wireless networks","Troubleshooting network services","Troubleshooting performance issues"]},
+ /* ---- LOGC1002 ---- */
+ {id:"l1",s:"logc",name:"Program Development Life Cycle",short:"Stages, activities and deliverables",
+  learn:["Stages of the program development life cycle","Activities in each stage","Deliverables from each stage"]},
+ {id:"l2",s:"logc",name:"Problem Analysis",short:"IPO charts, formulas and main steps",
+  learn:["Inputs and outputs for a problem statement","Formulas and equations needed to solve a problem","Main steps for solving a problem"]},
+ {id:"l3",s:"logc",name:"Flowcharts",short:"Symbols and sequence flowcharts",
+  learn:["Flowchart symbols and their purpose","Flowcharts with sequential logic"]},
+ {id:"l4",s:"logc",name:"Introduction to Python",short:"print, variables, maths, input() and comments",
+  learn:["Displaying output with print()","Variables","Calculations: + − * / // % ** and order of operations","Keyboard input with input()","Comments"]},
+ {id:"l5",s:"logc",name:"Conditions and Selection",short:"Boolean logic, if / elif / else, trace tables",
+  learn:["Boolean expressions with relational and logical operators","Flowcharts with selection","if, if-else, if-elif and nested if in Python","Trace tables for selection"]},
+ {id:"l6",s:"logc",name:"Repetition Structures (Loops)",short:"for, while, counters, accumulators, trace tables",
+  learn:["Main parts of a loop","Create, initialise and update the loop control variable","Conditions that control a loop","Flowcharts with repetition","Python for loops","Python while loops","Trace tables for loops"]},
+ {id:"l7",s:"logc",name:"User-Controlled Loops",short:"Sentinel values and priming reads",
+  learn:["User-controlled loops","The purpose of sentinel values","Sentinel-controlled while loops in Python"]},
+ /* ---- COHW1004 ---- */
+ {id:"c1",s:"cohw",name:"Examination of a Physical Computer",short:"Main PC parts and identifying ports",
+  learn:["Primary PC components","Identifying hardware interfaces (ports)"]},
+ {id:"c2",s:"cohw",name:"Motherboards",short:"Manuals, form factors, slots, beep codes",
+  learn:["Using a motherboard manual","Form factors (ATX, micro-ATX, mini-ITX)","Expansion slots (PCIe x1/x4/x16)","Installing and troubleshooting: beep codes and diagnostic lights"]},
+ {id:"c3",s:"cohw",name:"Central Processing Unit",short:"Role, cooling, sockets, installation",
+  learn:["Role and function of the CPU","CPU cooling options","CPU installation and troubleshooting","Types of CPUs (sockets: LGA vs PGA)"]},
+ {id:"c4",s:"cohw",name:"Working Memory",short:"RAM specs, capacity, virtual memory",
+  learn:["RAM specifications (DDR generations)","RAM capacity and total memory available","Virtual memory (page file)","RAM installation, cooling and troubleshooting"]},
+ {id:"c5",s:"cohw",name:"Firmware",short:"BIOS vs UEFI, POST, CMOS, configuring",
+  learn:["BIOS and UEFI","Power-On Self-Test (POST)","Accessing and configuring the BIOS","Troubleshooting the BIOS"]},
+ {id:"c6",s:"cohw",name:"Power Supply Unit",short:"Voltages, wattage, 80 PLUS, modular",
+  learn:["Voltages, wattages, efficiency ratings and cable management","Modular and non-modular power supplies","Installing and troubleshooting a PSU"]},
+ {id:"c7",s:"cohw",name:"Mass Storage",short:"HDD, SSD, SATA vs NVMe, RAID",
+  learn:["Removable media","Magnetic hard disk drives","Solid-state drives","RAID","Storage troubleshooting and avoiding data loss"]},
+ {id:"c8",s:"cohw",name:"Essential Peripherals",short:"USB, Thunderbolt, Lightning, expansion cards",
+  learn:["USB standards, connectors and configuration","Thunderbolt and Lightning compared to USB","Optical media, readers, scanners and common peripherals","Webcams and videoconferencing","Installing and troubleshooting expansion cards"]},
+ {id:"c9",s:"cohw",name:"Display Technologies",short:"Panels, ports, resolution, GPUs, multi-monitor",
+  learn:["Monitor technologies","Graphics cards and connections","Resolutions and aspect ratios","GPU installation","Multiple monitors and projectors"]},
+ {id:"c10",s:"cohw",name:"Operating Systems and Virtualization",short:"Installing an OS and using virtual machines",
+  learn:["Installing proprietary and open-source operating systems","Using virtual machines"]},
+ {id:"c11",s:"cohw",name:"Cross-Platform Computing",short:"Laptops, mobile and embedded devices",
+  learn:["Laptop core components and features","Mobile devices","Embedded devices"]},
+ {id:"c12",s:"cohw",name:"Printers and Multifunction Devices",short:"Connecting, sharing and fixing printers",
+  learn:["Printer connection and installation","Sharing printers","Printer troubleshooting"]},
+ {id:"c13",s:"cohw",name:"Troubleshooting Hardware and Software",short:"UPS, maintenance, monitoring tools",
+  learn:["Protecting computers: UPS, line conditioners and generators","OS maintenance and backups","Physical maintenance: thermal paste, fans and filters","Monitoring tools, e.g. Task Manager","Monitoring temperatures and usage","Monitoring performance and stability"]},
+];
+const TOPIC = Object.fromEntries(TOPICS.map(t=>[t.id,t]));
+const topicsOf = s => TOPICS.filter(t=>t.s===s);
+
+/* =================== QUESTION BANK ===================
+   ty: mc (o = options, a = index) · tf (a = true/false) · fill (a = accepted answers) · order (o = items in the right order) · match (o = [left, right] pairs)
+   d: e = easy, m = medium, h = hard · tags: subnet, trace, beep, port, binary, predict ...
+   why = why the answer is right · trap = the likely mistake and how to fix it */
+const BANK = [
+ /* ---------- NTWK ---------- */
+ {id:"n1-01",t:"n1",d:"e",ty:"mc",q:"Every computer in the UTT lab plugs into one central switch. Which topology is this?",o:["Bus","Star","Ring","Mesh"],a:1,
+  why:"In a star topology every device has its own cable to one central device, usually a switch.",trap:"Bus uses one shared backbone cable that every device taps into. If you see a central box, think star."},
+ {id:"n1-02",t:"n1",d:"e",ty:"tf",q:"In a peer-to-peer network there is no dedicated server: each computer can both share and use resources.",a:true,
+  why:"That's the definition of peer-to-peer. Each peer is equal, like friends lending each other notes.",trap:"Client/server is the one with a dedicated server that the other computers (clients) request things from."},
+ {id:"n1-03",t:"n1",d:"m",ty:"mc",q:"A network links several office buildings across one city, such as Port of Spain. What type of network is it?",o:["PAN","LAN","MAN","WAN"],a:2,
+  why:"A MAN (metropolitan area network) covers a town or city. A LAN covers one building or campus; a WAN covers countries or regions.",trap:"Students jump to WAN for anything bigger than a building. WAN is for very large distances, like Trinidad to Tobago or Miami."},
+ {id:"n1-04",t:"n1",d:"m",ty:"mc",q:"Which topology connects every device directly to every other device, giving the most redundant paths?",o:["Full mesh","Star","Bus","Ring"],a:0,
+  why:"In a full mesh each device has a link to every other device, so if one link fails traffic can take another path.",trap:"A ring has only two neighbours per device. Mesh = many paths, like a spider's web."},
+ {id:"n2-01",t:"n2",d:"m",ty:"order",q:"Put the PDU names in encapsulation order, from what the application creates down to what goes on the wire.",o:["Data","Segment","Packet","Frame","Bits"],
+  why:"Going down the layers: Data (layers 7–5) → Segment (Transport, 4) → Packet (Network, 3) → Frame (Data Link, 2) → Bits (Physical, 1).",trap:"Mixing up packet and frame is the usual slip. Packet = layer 3 (IP addresses). Frame = layer 2 (MAC addresses)."},
+ {id:"n2-02",t:"n2",d:"e",ty:"mc",q:"At which OSI layer does a router make its decisions?",o:["Layer 1 – Physical","Layer 2 – Data Link","Layer 3 – Network","Layer 4 – Transport"],a:2,
+  why:"Routers read IP addresses and choose the best path between networks. IP addressing lives at layer 3, the Network layer.",trap:"Switches are layer 2 (MAC addresses). Routers are layer 3 (IP addresses)."},
+ {id:"n2-03",t:"n2",d:"m",ty:"match",q:"Match each OSI layer to its PDU.",o:[["Transport","Segment"],["Network","Packet"],["Data Link","Frame"],["Physical","Bits"]],
+  why:"Transport → Segment, Network → Packet, Data Link → Frame, Physical → Bits. Memory aid: Some People Fear Birthdays.",trap:"Remember the order top-down: Segment, Packet, Frame, Bits."},
+ {id:"n2-04",t:"n2",d:"m",ty:"mc",q:"The TCP/IP model's Application layer covers which OSI layers?",o:["Layer 7 only","Layers 5, 6 and 7","Layers 1 and 2","Layers 3 and 4"],a:1,
+  why:"TCP/IP squeezes OSI's Session (5), Presentation (6) and Application (7) layers into one Application layer.",trap:"OSI has 7 layers and TCP/IP has 4, so some OSI layers must be grouped together."},
+ {id:"n3-01",t:"n3",d:"m",ty:"mc",q:"In the T568B standard, what colour wire goes in pin 1?",o:["White/orange","White/green","Orange","Blue"],a:0,
+  why:"T568B order: 1 white/orange, 2 orange, 3 white/green, 4 blue, 5 white/blue, 6 green, 7 white/brown, 8 brown.",trap:"White/green is pin 1 in T568A. The two standards swap the orange and green pairs."},
+ {id:"n3-02",t:"n3",d:"e",ty:"mc",q:"What is the maximum length of a single UTP Ethernet cable run?",o:["10 m","100 m","500 m","2 km"],a:1,
+  why:"Copper twisted-pair Ethernet (e.g. Cat5e, Cat6) is limited to 100 metres per run before the signal gets too weak.",trap:"Longer distances need fibre or a switch/repeater in between."},
+ {id:"n3-03",t:"n3",d:"m",ty:"mc",q:"Which cable would you traditionally use to connect a PC to a switch?",o:["Crossover","Straight-through","Rollover","Coaxial"],a:1,
+  why:"Different types of device (PC ↔ switch) use a straight-through cable: the same standard on both ends.",trap:"Crossover was for LIKE devices (PC ↔ PC, switch ↔ switch). Many modern ports auto-detect (Auto-MDIX), but exams still expect this rule."},
+ {id:"n4-01",t:"n4",d:"m",ty:"mc",q:"Which Wi-Fi standard works ONLY in the 5 GHz band?",o:["802.11a","802.11b","802.11g","802.11n"],a:0,
+  why:"802.11a uses 5 GHz only. 802.11b and g use 2.4 GHz. 802.11n can use both.",trap:"Students think 'a' must be the oldest and slowest 2.4 GHz one. It's 5 GHz, up to 54 Mbps."},
+ {id:"n4-02",t:"n4",d:"e",ty:"mc",q:"Which wireless security option is the newest and strongest?",o:["WEP","WPA","WPA2","WPA3"],a:3,
+  why:"WPA3 is the newest standard with the strongest protection. WEP is old and easily cracked.",trap:"Never choose WEP on an exam as 'secure'. It's the weakest."},
+ {id:"n5-01",t:"n5",d:"e",ty:"mc",q:"Which device learns MAC addresses and sends each frame only to the port where the destination is?",o:["Hub","Switch","Router","Repeater"],a:1,
+  why:"A switch keeps a MAC address table, like an office receptionist who knows exactly which desk everyone sits at.",trap:"A hub repeats every signal out of every port, like shouting across the whole office."},
+ {id:"n5-02",t:"n5",d:"e",ty:"mc",q:"You need to join a fibre-optic link to a copper Ethernet switch port. Which device do you use?",o:["Bridge","Access point","Media converter","Modem"],a:2,
+  why:"A media converter changes the signal from one type of media (fibre/light) to another (copper/electricity).",trap:"A bridge joins two network segments; it doesn't change the type of cable."},
+ {id:"n6-01",t:"n6",d:"e",ty:"fill",q:"Convert the binary octet 11000000 to decimal.",a:["192"],tags:["binary"],
+  why:"Place values: 128 64 32 16 8 4 2 1. The two 1s are 128 + 64 = 192.",trap:"Start from the left with 128, not 1."},
+ {id:"n6-02",t:"n6",d:"m",ty:"mc",q:"How many usable host addresses are in the network 192.168.10.0/26?",o:["64","62","30","254"],a:1,tags:["subnet"],
+  why:"/26 leaves 32 − 26 = 6 host bits. 2⁶ = 64 addresses, minus 2 (network and broadcast) = 62 usable hosts.",trap:"64 forgets to subtract the network and broadcast addresses: usable hosts = 2ⁿ − 2."},
+ {id:"n6-03",t:"n6",d:"h",ty:"mc",q:"What is the broadcast address of the subnet that contains 192.168.1.70/27?",o:["192.168.1.64","192.168.1.95","192.168.1.127","192.168.1.255"],a:1,tags:["subnet"],
+  why:"/27 → block size 32. Subnets start at .0, .32, .64, .96. 70 is in the .64 subnet, which runs .64 to .95. The broadcast is the last address: .95.",trap:"192.168.1.64 is the network address (first). The broadcast is the LAST address before the next subnet starts (.96 − 1 = .95)."},
+ {id:"n6-04",t:"n6",d:"m",ty:"mc",q:"A laptop shows the IP address 169.254.12.7. What does this usually mean?",o:["It's using the loopback address","It couldn't get an address from a DHCP server","It has a public IP address","It's connected to a WAN"],a:1,
+  why:"169.254.x.x is APIPA. Windows gives itself one of these when it asks for a DHCP address and nobody answers.",trap:"Loopback is 127.0.0.1. APIPA is the 'I asked for an address and got no reply' sign."},
+ {id:"n6-05",t:"n6",d:"m",ty:"tf",q:"172.20.5.1 is a private IP address.",a:true,
+  why:"The private ranges are 10.0.0.0/8, 172.16.0.0 to 172.31.255.255 (172.16.0.0/12) and 192.168.0.0/16. 172.20 falls inside 172.16–172.31.",trap:"Not every 172.x address is private, only 172.16 to 172.31."},
+ {id:"n6-06",t:"n6",d:"e",ty:"fill",q:"Write the subnet mask for /24 in dotted decimal.",a:["255.255.255.0"],tags:["subnet"],
+  why:"/24 means 24 ones: 11111111.11111111.11111111.00000000 = 255.255.255.0.",trap:"Each group of 8 ones is 255."},
+ {id:"n7-01",t:"n7",d:"e",ty:"mc",q:"Which of these is the largest WAN in the world?",o:["The UTT campus network","The internet","A home Wi-Fi network","A Bluetooth headset link"],a:1,
+  why:"The internet is a huge WAN made of many connected networks spanning the whole planet.",trap:"A campus is a LAN (or MAN if spread across a city). Bluetooth is a PAN."},
+ {id:"n8-01",t:"n8",d:"e",ty:"mc",q:"You install a new router. What's the FIRST hardening step?",o:["Enable every service","Change the default admin password","Leave remote management on","Turn off the firewall"],a:1,
+  why:"Default passwords are published online, so anyone could log in. Changing them is step one of device hardening.",trap:"Hardening means turning things OFF and locking them down, not switching more on."},
+ {id:"n9-01",t:"n9",d:"m",ty:"order",q:"Put the troubleshooting methodology steps in order.",o:["Identify the problem","Establish a theory of probable cause","Test the theory","Establish a plan of action","Implement the solution or escalate","Verify full functionality","Document findings"],
+  why:"Identify → theory → test → plan → implement → verify → document. Documenting comes LAST so the next technician can learn from it.",trap:"Don't jump straight to fixing. You must identify the problem and test a theory first."},
+ {id:"n9-02",t:"n9",d:"e",ty:"mc",q:"Which Windows command shows a PC's IP address, subnet mask and default gateway?",o:["ping","ipconfig","tracert","nslookup"],a:1,
+  why:"ipconfig shows the IP settings. ipconfig /all shows even more, like the MAC address and DNS servers.",trap:"ping tests whether another device replies; it doesn't show your own settings."},
+ {id:"n9-03",t:"n9",d:"m",ty:"mc",q:"Which tool helps you find which cable at the patch panel goes to a wall jack?",o:["Crimper","Toner probe","Punch-down tool","Loopback plug"],a:1,
+  why:"A toner sends a tone down the cable and the probe beeps when you touch the right one at the other end.",trap:"A crimper attaches RJ45 plugs; a punch-down tool seats wires into a patch panel."},
+ {id:"n9-04",t:"n9",d:"e",ty:"mc",q:"Which port does DNS use?",o:["25","53","80","443"],a:1,tags:["port"],
+  why:"DNS uses port 53. Memory aid: DNS turns names into numbers, and 53 is the number.",trap:"25 is SMTP (email sending), 80 is HTTP, 443 is HTTPS."},
+
+ /* ---------- LOGC ---------- */
+ {id:"l1-01",t:"l1",d:"e",ty:"mc",q:"In which stage of the program development life cycle do you draw the flowchart?",o:["Analysis","Design","Coding","Testing"],a:1,
+  why:"Design is where you plan the solution: the algorithm, flowchart or pseudocode, before writing any code.",trap:"Analysis is about understanding the problem (inputs, outputs, formulas), not drawing the solution yet."},
+ {id:"l2-01",t:"l2",d:"e",ty:"mc",q:"Problem: 'Read the length and width of a room, then display its area.' What is the OUTPUT?",o:["Length","Width","Area","Length × width formula"],a:2,
+  why:"The output is what the program displays: the area. Length and width are inputs; area = length × width is the process.",trap:"The formula belongs in the Process column of the IPO chart, not the Output."},
+ {id:"l3-01",t:"l3",d:"e",ty:"match",q:"Match each flowchart symbol to its job.",o:[["Oval / rounded rectangle","Start or stop"],["Parallelogram","Input or output"],["Rectangle","Process (calculation)"],["Diamond","Decision (yes/no)"]],
+  why:"Terminator = oval, input/output = parallelogram, process = rectangle, decision = diamond.",trap:"Input and output share the same parallelogram symbol."},
+ {id:"l4-01",t:"l4",d:"e",ty:"mc",q:"What does this print?",code:"print(7 // 2)",o:["3.5","3","4","1"],a:1,tags:["predict"],
+  why:"// is floor division: it divides and drops the decimal part. 7 // 2 = 3.",trap:"3.5 is what / gives. 1 is 7 % 2 (the remainder)."},
+ {id:"l4-02",t:"l4",d:"m",ty:"mc",q:"What does this print?",code:"print('5' + '3')",o:["8","53","'5' + '3'","An error"],a:1,tags:["predict"],
+  why:"'5' and '3' are strings (text). + joins strings together, so the result is 53.",trap:"Quotes make it text. To add numbers you'd need int('5') + int('3')."},
+ {id:"l4-03",t:"l4",d:"m",ty:"mc",q:"age = input('Age: ') — what data type is age?",o:["int","float","str","bool"],a:2,
+  why:"input() ALWAYS returns a string, even if the user types a number.",trap:"To do maths you must convert it: age = int(input('Age: '))."},
+ {id:"l4-04",t:"l4",d:"m",ty:"fill",q:"What does print(2 + 3 * 4) display?",a:["14"],tags:["predict"],
+  why:"Multiplication happens before addition: 3 * 4 = 12, then 2 + 12 = 14.",trap:"Working left to right gives 20. Use BODMAS: brackets, powers, × and ÷, then + and −."},
+ {id:"l5-01",t:"l5",d:"h",ty:"mc",q:"What does this print?",code:"x = 10\nif x > 5:\n    print('A')\nelif x > 8:\n    print('B')\nelse:\n    print('C')",o:["A","B","A and B","C"],a:0,tags:["predict"],
+  why:"Python checks from the top and stops at the first True condition. x > 5 is True, so it prints A and skips the rest.",trap:"x > 8 is also true, but it's never reached. Put the most specific (biggest) condition first."},
+ {id:"l5-02",t:"l5",d:"e",ty:"tf",q:"In Python, = is used to compare two values.",a:false,
+  why:"= assigns a value to a variable. == compares two values and gives True or False.",trap:"if x = 5: is a syntax error. Write if x == 5:"},
+ {id:"l6-01",t:"l6",d:"m",ty:"mc",q:"What does this print?",code:"for i in range(1, 4):\n    print(i, end=' ')",o:["1 2 3 4","1 2 3","0 1 2 3","2 3 4"],a:1,tags:["predict"],
+  why:"range(1, 4) starts at 1 and STOPS BEFORE 4, so you get 1 2 3.",trap:"The stop value is never included. That's the classic off-by-one mistake."},
+ {id:"l6-02",t:"l6",d:"m",ty:"mc",q:"Why does this loop never end?",code:"n = 0\nwhile n < 3:\n    print(n)",o:["n starts at 0","The condition should use <=","n is never updated inside the loop","print() stops loops"],a:2,
+  why:"n stays 0 forever, so n < 3 is always True. Add n = n + 1 inside the loop.",trap:"Every while loop needs a line inside that moves the variable towards making the condition False."},
+ {id:"l6-03",t:"l6",d:"m",ty:"fill",q:"What does this print?",code:"total = 0\nfor i in range(1, 4):\n    total = total + i\nprint(total)",a:["6"],tags:["predict"],
+  why:"i takes 1, 2, 3. total goes 0 → 1 → 3 → 6.",trap:"Remember range(1, 4) stops before 4, so 4 is not added."},
+ {id:"l7-01",t:"l7",d:"m",ty:"mc",q:"In a sentinel-controlled loop, why do we read the first value BEFORE the loop?",o:["To make the loop faster","So the while condition has a value to test the first time","Because Python requires two input() calls","To skip the first value"],a:1,
+  why:"This is the priming read. The while condition needs a real value to check before the loop starts.",trap:"Without the priming read, the variable doesn't exist yet when the condition is tested."},
+ {id:"l7-02",t:"l7",d:"h",ty:"mc",q:"Marks are entered until -1. What's wrong with this?",code:"total = 0\nmark = int(input())\nwhile mark != -1:\n    mark = int(input())\n    total = total + mark",o:["Nothing","The first mark is skipped and the -1 is added to the total","It never stops","total should start at 1"],a:1,
+  why:"The new value is read BEFORE adding, so the first mark is lost and the sentinel -1 gets added. Add first, then read the next value at the END of the loop.",trap:"Processing the sentinel by mistake is a top exam error. Order inside the loop: process, then read next."},
+
+ /* ---------- COHW ---------- */
+ {id:"c1-01",t:"c1",d:"e",ty:"mc",q:"Which component carries out program instructions and is often called the 'brain' of the computer?",o:["RAM","CPU","PSU","SSD"],a:1,
+  why:"The CPU (central processing unit) fetches, decodes and executes instructions.",trap:"RAM holds what the CPU is working on (your desk); it doesn't do the thinking."},
+ {id:"c1-02",t:"c1",d:"e",ty:"mc",q:"RAM is like your desk and storage is like your filing cabinet. What happens to what's in RAM when the PC is switched off?",o:["It's saved automatically","It's lost","It moves to the CPU","It's printed"],a:1,
+  why:"RAM is volatile: it needs power to keep data. That's why you save work to storage.",trap:"Storage (SSD/HDD) keeps data with the power off. RAM does not."},
+ {id:"c2-01",t:"c2",d:"m",ty:"mc",q:"Which motherboard form factor is the LARGEST?",o:["Mini-ITX","Micro-ATX","ATX","They're all the same"],a:2,
+  why:"Standard ATX is 305 × 244 mm, micro-ATX is 244 × 244 mm and mini-ITX is just 170 × 170 mm.",trap:"Micro sounds small but mini-ITX is the smallest of the three."},
+ {id:"c2-02",t:"c2",d:"e",ty:"mc",q:"Which slot is normally used for a graphics card?",o:["PCIe x1","PCIe x16","DIMM slot","M.2"],a:1,
+  why:"Graphics cards need the most lanes, so they go in the long PCIe x16 slot.",trap:"DIMM slots are for RAM. M.2 is mostly for SSDs."},
+ {id:"c2-03",t:"c2",d:"m",ty:"mc",q:"A PC beeps 3 times and won't boot. Beep codes differ between BIOS makers. What should you check FIRST to know what 3 beeps means?",o:["Reinstall Windows","The motherboard manual or maker's website","Replace the CPU","Change the monitor cable"],a:1,tags:["beep"],
+  why:"The manual (or support site) lists that board's beep codes. Then you know which part to check, often RAM for memory codes.",trap:"Don't replace parts blindly. Look up the code first, then test the part it points to."},
+ {id:"c3-01",t:"c3",d:"e",ty:"mc",q:"Why do you put thermal paste between the CPU and its cooler?",o:["To glue the cooler on","To fill tiny air gaps so heat moves to the cooler","To insulate the CPU from electricity","To make the fan spin"],a:1,
+  why:"The metal surfaces have microscopic gaps. Paste fills them so heat transfers better than through air.",trap:"More is not better: a pea-sized amount is enough."},
+ {id:"c3-02",t:"c3",d:"m",ty:"mc",q:"On an LGA socket, where are the pins?",o:["On the CPU","On the motherboard socket","On the cooler","There are no pins"],a:1,
+  why:"LGA (land grid array): the pins are in the motherboard socket and the CPU has flat pads. PGA is the opposite: pins on the CPU.",trap:"Think 'L for Lands on the CPU': flat lands on the chip, pins in the socket."},
+ {id:"c4-01",t:"c4",d:"e",ty:"tf",q:"A DDR4 memory stick will fit and work in a DDR5 slot.",a:false,
+  why:"Each DDR generation has the notch in a different place and different voltages, so they are NOT interchangeable.",trap:"Always match the RAM generation to what the motherboard supports."},
+ {id:"c4-02",t:"c4",d:"m",ty:"mc",q:"Roughly how much RAM can a 32-bit operating system use?",o:["2 GB","4 GB","16 GB","Unlimited"],a:1,
+  why:"32 bits can address 2³² bytes = 4 GB. A 64-bit OS is needed to use more.",trap:"Adding 8 GB to a 32-bit OS won't help: it can only use about 4 GB (often a bit less)."},
+ {id:"c5-01",t:"c5",d:"e",ty:"mc",q:"What does POST stand for?",o:["Power-On Self-Test","Primary Operating System Test","Power Output Supply Test","Processor On Startup Timer"],a:0,tags:["beep"],
+  why:"POST is the Power-On Self-Test: the firmware checks the essential hardware before the OS loads.",trap:"If POST fails you'll often hear beep codes or see diagnostic lights."},
+ {id:"c5-02",t:"c5",d:"m",ty:"mc",q:"A PC keeps losing its date and time every time it's unplugged. What's the most likely fix?",o:["Replace the CMOS battery","Add more RAM","Update the GPU driver","Replace the hard drive"],a:0,
+  why:"The small coin battery on the motherboard keeps the real-time clock (and settings) running when the PC has no power.",trap:"Wrong time after unplugging is the classic sign of a dead CMOS battery."},
+ {id:"c6-01",t:"c6",d:"m",ty:"mc",q:"Which PSU voltage rail powers the CPU and graphics card?",o:["3.3 V","5 V","12 V","240 V"],a:2,
+  why:"The 12 V rail feeds the power-hungry parts: CPU (via the 8-pin connector) and GPU (via PCIe 6+2 connectors).",trap:"3.3 V and 5 V are for smaller loads. 240 V is wall power going INTO the PSU."},
+ {id:"c7-01",t:"c7",d:"m",ty:"mc",q:"Which RAID level stripes data across disks with NO redundancy?",o:["RAID 0","RAID 1","RAID 5","RAID 10"],a:0,
+  why:"RAID 0 splits data across disks for speed. If one disk dies, everything is lost.",trap:"The 0 is a reminder: zero protection."},
+ {id:"c7-02",t:"c7",d:"m",ty:"tf",q:"Every M.2 SSD uses NVMe.",a:false,
+  why:"M.2 is just the shape and slot. An M.2 drive can be SATA or NVMe, and the motherboard must support the type.",trap:"Don't confuse the form factor (M.2) with the interface (SATA or NVMe)."},
+ {id:"c7-03",t:"c7",d:"m",ty:"tf",q:"RAID 1 (mirroring) means you don't need a backup.",a:false,
+  why:"RAID protects against a drive failing, but if you delete a file or get ransomware, the mirror copies the damage too.",trap:"RAID is NOT a backup. Keep a separate copy."},
+ {id:"c8-01",t:"c8",d:"m",ty:"mc",q:"What is the maximum speed of USB 2.0?",o:["12 Mbps","480 Mbps","5 Gbps","40 Gbps"],a:1,
+  why:"USB 2.0 (Hi-Speed) runs at up to 480 Mbps. USB 3.x starts at 5 Gbps.",trap:"40 Gbps is Thunderbolt 3/4 or USB4."},
+ {id:"c9-01",t:"c9",d:"e",ty:"mc",q:"Which video port carries digital video AND audio and is found on almost every TV?",o:["VGA","DVI","HDMI","PS/2"],a:2,
+  why:"HDMI carries digital video and audio in one cable.",trap:"VGA is analogue and video-only. DVI is mostly video-only."},
+ {id:"c10-01",t:"c10",d:"m",ty:"mc",q:"Which describes a Type 2 hypervisor?",o:["Runs directly on the hardware","Runs as an app on top of a host OS, like VirtualBox","Is the same as a BIOS","Can only run Linux"],a:1,
+  why:"Type 2 (hosted) hypervisors such as VirtualBox run on top of Windows/macOS/Linux. Type 1 (bare-metal) runs straight on the hardware.",trap:"Type 1 = bare metal (closest to hardware). Type 2 = on top of an OS."},
+ {id:"c12-01",t:"c12",d:"h",ty:"order",q:"Put the laser printing process in order.",o:["Processing","Charging","Exposing","Developing","Transferring","Fusing","Cleaning"],
+  why:"Processing → Charging → Exposing → Developing → Transferring → Fusing → Cleaning.",trap:"Fusing (heat and pressure melting toner onto the paper) comes after transferring the toner."},
+ {id:"c13-01",t:"c13",d:"e",ty:"mc",q:"T&TEC power goes out. Which device keeps the PC running for a few minutes so you can save and shut down?",o:["Surge suppressor","UPS","Line conditioner","Power strip"],a:1,
+  why:"A UPS (uninterruptible power supply) has a battery that takes over instantly when mains power fails.",trap:"A surge suppressor only blocks spikes. It has no battery."},
+];
+const QB = Object.fromEntries(BANK.map(q=>[q.id,q]));
+BANK.forEach(q=>{ q.s = TOPIC[q.t].s; q.tags ||= []; });
+
+/* =================== SPEED GAMES =================== */
+const OSI = ["","Physical","Data Link","Network","Transport","Session","Presentation","Application"];
+const LAYER_DECK = [["HTTP",7],["HTTPS",7],["DNS",7],["FTP",7],["SMTP",7],["DHCP",7],["Data formatting, e.g. JPEG or ASCII",6],["Encryption and compression of data",6],
+ ["Opening, managing and closing a session",5],["TCP",4],["UDP",4],["Port numbers",4],["Segments",4],["IP addresses",3],["Router",3],["Packets",3],["ICMP (used by ping)",3],
+ ["Switch",2],["MAC addresses",2],["Frames",2],["Bridge",2],["Hub",1],["Repeater",1],["UTP cable",1],["Bits on the wire",1],["Media converter",1]];
+const PORT_DECK = [["FTP","20/21"],["SSH","22"],["Telnet","23"],["SMTP","25"],["DNS","53"],["DHCP","67/68"],["HTTP","80"],["POP3","110"],["IMAP","143"],["HTTPS","443"],["RDP","3389"]];
+/* Every output below was produced by running the code in Python 3 */
+const PREDICT_DECK = [
+ ["print(7 // 2)","3",["3.5","4","1"]],["print(7 / 2)","3.5",["3","4","3.0"]],["print(7 % 2)","1",["3","3.5","0"]],["print(2 ** 3)","8",["6","9","5"]],
+ ["print(2 + 3 * 4)","14",["20","24","9"]],["print((2 + 3) * 4)","20",["14","24","9"]],["print(10 - 4 / 2)","8.0",["3.0","8","3"]],["print('5' + '3')","53",["8","'53'","Error"]],
+ ["print(int('5') + 3)","8",["53","Error","5"]],["print('ha' * 3)","hahaha",["ha3","Error","ha ha ha"]],["for i in range(3):\n    print(i, end=' ')","0 1 2",["1 2 3","0 1 2 3","3"]],
+ ["for i in range(1, 4):\n    print(i, end=' ')","1 2 3",["1 2 3 4","0 1 2 3","2 3 4"]],["for i in range(0, 10, 3):\n    print(i, end=' ')","0 3 6 9",["3 6 9","0 3 6","0 3 6 9 12"]],
+ ["x = 5\nif x > 3:\n    print('big')\nelse:\n    print('small')","big",["small","big small","Error"]],
+ ["x = 10\nif x > 5:\n    print('A')\nelif x > 8:\n    print('B')\nelse:\n    print('C')","A",["B","A B","C"]],
+ ["n = 0\nwhile n < 3:\n    n = n + 1\nprint(n)","3",["2","4","0"]],["total = 0\nfor i in range(1, 4):\n    total = total + i\nprint(total)","6",["10","3","4"]],
+ ["print(5 == 5.0)","True",["False","Error","5"]],["print(3 > 2 and 2 > 5)","False",["True","Error","3"]],["print(not True or True)","True",["False","Error","None"]],
+ ["x = 4\nx = x * 2\nx = x - 1\nprint(x)","7",["8","4","3"]],["print(17 % 5)","2",["3","3.4","12"]],["print(len('Trini'))","5",["4","6","Trini"]],
+ ["count = 3\nwhile count > 0:\n    print(count, end=' ')\n    count -= 1","3 2 1",["3 2 1 0","2 1 0","3"]],["print(10 // 3 * 3)","9",["10","1","3"]],["a = 3\nb = a\na = 7\nprint(b)","3",["7","10","Error"]],
+];
+const PART_DECK = [["Keeps the clock running when the PC is unplugged","CMOS battery"],["The long slot a graphics card goes in","PCIe x16 slot"],["Short-term working memory, wiped at power-off","RAM"],
+ ["Converts AC wall power into DC for the parts","PSU"],["Spinning platters with a moving read/write head","HDD"],["Tiny stick SSD slot that can be SATA or NVMe","M.2 slot"],
+ ["Blue 15-pin analogue video port","VGA port"],["Digital video + audio port on most TVs","HDMI port"],["Network port for an Ethernet cable","RJ45 port"],
+ ["Reversible oval USB connector","USB-C"],["Main 24-pin power connector's destination","Motherboard"],["Paste between CPU and cooler","Thermal paste"],
+ ["Video port with a locking latch, common on PC monitors","DisplayPort"],["Flat 7-pin data cable for HDDs and 2.5\" SSDs","SATA data cable"],
+ ["Carries out instructions: the 'brain'","CPU"],["Long slots that hold memory sticks","DIMM slots"],["Battery backup that keeps the PC on in a blackout","UPS"],
+ ["Draws heat away from the CPU with fins and a fan","CPU cooler"],["Firmware that starts the PC and runs POST","BIOS/UEFI"],["Adds extra ports or features via a slot","Expansion card"]];
+const GAMES = {
+ layer:{s:"ntwk",n:"Which Layer?",d:"A protocol, device or PDU flashes up. Tap its OSI layer.",
+  deck:()=>LAYER_DECK.map(([p,L])=>({p, a:`Layer ${L}\n${OSI[L]}`, pool:[1,2,3,4,5,6,7].map(k=>`Layer ${k}\n${OSI[k]}`), why:`${p} works at layer ${L}, ${OSI[L]}.`}))},
+ port:{s:"ntwk",n:"Port Match",d:"Match each protocol to its port number, then the other way round.",
+  deck:()=>PORT_DECK.flatMap(([p,n])=>[{p:`${p} uses port…`, a:n, pool:PORT_DECK.map(x=>x[1]), why:`${p} = port ${n}.`},{p:`Port ${n} is…`, a:p, pool:PORT_DECK.map(x=>x[0]), why:`Port ${n} = ${p}.`}])},
+ predict:{s:"logc",n:"Predict the Output",d:"Read the Python. What does it print?",
+  deck:()=>PREDICT_DECK.map(([c,a,ds])=>({code:c, a, opts:[a,...ds], why:`It prints ${a}.`}))},
+ part:{s:"cohw",n:"Name That Port/Part",d:"Read the clue. Which part or port is it?",
+  deck:()=>PART_DECK.map(([p,a])=>({p, a, pool:PART_DECK.map(x=>x[1]), why:`${p}: ${a}.`}))},
+};
+
+/* =================== REWARDS DATA =================== */
+const LEVELS = ["Help Desk Trainee","IT Support Technician","Junior Programmer","Network Technician","Systems Administrator","Software Developer","Network Engineer","Senior Software Engineer","IT Manager","Chief Technology Officer"];
+const BADGES = [
+ {id:"first",n:"First Boot",d:"Finish your first quiz",m:"⏻"},
+ {id:"perfect",n:"Bug-Free",d:"Score 100% on a quiz",m:"✓"},
+ {id:"streak3",n:"On a Roll",d:"3-day streak",m:"3"},
+ {id:"streak7",n:"Week Strong",d:"7-day streak",m:"7"},
+ {id:"streak30",n:"Unstoppable",d:"30-day streak",m:"30"},
+ {id:"daily5",n:"Daily Grinder",d:"5 daily challenges",m:"D"},
+ {id:"curious",n:"Curious Mind",d:"Ask the Coach 20 questions",m:"?"},
+ {id:"subnet",n:"Subnet Slayer",d:"10 subnetting questions right",m:"/24"},
+ {id:"trace",n:"Trace Table Pro",d:"10 trace tables right",m:"▦"},
+ {id:"beep",n:"Beep Code Detective",d:"Every beep-code/POST question right",m:"♪"},
+ {id:"game",n:"Quick Fingers",d:"Score 15+ in a speed game",m:"⚡"},
+ {id:"master5",n:"Topic Master",d:"80%+ in 5 topics",m:"5"},
+ {id:"allround",n:"All-Rounder",d:"A quiz in every topic of all 3 subjects",m:"A"},
+ {id:"xp1000",n:"Grand Total",d:"Earn 1,000 XP",m:"1k"},
+ {id:"photo",n:"Show Your Work",d:"Send the Coach a photo of your working",m:"📷"},
+ {id:"fixer",n:"Error Fixer",d:"Review your mistakes with the Coach",m:"Fx"},
+];
+const EMPIRE = [
+ {ic:"📱",n:"Phone Repair Stall",f:"Your first business: swapping screens and batteries at the mall."},
+ {ic:"🖥️",n:"Internet Café",f:"Ten PCs sharing files as equals: a peer-to-peer LAN."},
+ {ic:"🏫",n:"School Computer Lab",f:"Every PC cabled to one switch in the middle: a star topology."},
+ {ic:"🧾",n:"Small Office Network",f:"A file server plus clients, with DHCP handing out IP addresses."},
+ {ic:"📶",n:"Mall Wi-Fi Hotspot",f:"802.11 access points everywhere, locked down with WPA3."},
+ {ic:"🔧",n:"PC Build & Repair Shop",f:"Motherboards, PSUs and RAID arrays on every workbench."},
+ {ic:"🐍",n:"Python App Startup",f:"Loops, selection and sentinel input powering your first app."},
+ {ic:"🏦",n:"Bank Branch Network",f:"Subnetted departments and hardened devices keep the money safe."},
+ {ic:"🌐",n:"Internet Service Provider",f:"WAN links connecting homes from Chaguaramas to Toco."},
+ {ic:"🗄️",n:"Caribbean Data Centre",f:"Racks of virtual machines on RAID 10, backed by UPS power."},
+ {ic:"🚀",n:"Regional Tech Giant",f:"From a phone stall to a tech empire. CTO material."},
+];
+const SHOP = [
+ {id:"th-circuit",kind:"theme",n:"Circuit Teal",p:0,sw:"#0E7C7B",d:"The default look"},
+ {id:"th-maracas",kind:"theme",n:"Maracas Blue",p:250,sw:"#0F6FA8",d:"Sea and sky"},
+ {id:"th-carnival",kind:"theme",n:"Carnival Night",p:300,sw:"#6A2C9E",d:"Purple and gold"},
+ {id:"th-ibis",kind:"theme",n:"Scarlet Ibis",p:300,sw:"#BF3A2B",d:"National bird red"},
+ {id:"th-pan",kind:"theme",n:"Steelpan",p:400,sw:"#3E5566",d:"Cool steel"},
+ {id:"av-coconut",kind:"avatar",n:"Coconut",p:60,ic:"🥥"},{id:"av-hibiscus",kind:"avatar",n:"Hibiscus",p:60,ic:"🌺"},
+ {id:"av-parrot",kind:"avatar",n:"Parrot",p:80,ic:"🦜"},{id:"av-turtle",kind:"avatar",n:"Leatherback",p:80,ic:"🐢"},
+ {id:"av-cricket",kind:"avatar",n:"Cricket",p:100,ic:"🏏"},{id:"av-football",kind:"avatar",n:"Football",p:100,ic:"⚽"},
+ {id:"av-drum",kind:"avatar",n:"Pan drum",p:120,ic:"🥁"},{id:"av-mask",kind:"avatar",n:"Mas mask",p:120,ic:"🎭"},
+ {id:"av-flamingo",kind:"avatar",n:"Flamingo",p:150,ic:"🦩"},{id:"av-robot",kind:"avatar",n:"Robot",p:200,ic:"🤖"},
+ {id:"av-laptop",kind:"avatar",n:"Laptop",p:200,ic:"💻"},{id:"av-crown",kind:"avatar",n:"Chief's crown",p:500,ic:"👑"},
+ {id:"freeze",kind:"power",n:"Streak freeze",p:150,ic:"🧊",d:"Saves your streak if you miss a day (hold up to 2)"},
+ {id:"co-calypso",kind:"coach",n:"Calypso Coach",p:250,ic:"🎤",d:"Ends lessons with a little rhyme to remember"},
+ {id:"co-examiner",kind:"coach",n:"Examiner Coach",p:250,ic:"📝",d:"Strict, mark-scheme style feedback"},
+];
+const GOALS = {level:"Reach level", streak:"Day streak of", xp:"Total XP of", mastered:"Topics at 80%+:", structured:"Structured questions marked:", daily:"Daily challenges done:"};
+
+/* =================== CONFIG =================== */
+const MODEL = "claude-opus-5-5";
+const ONLINE_URL = "https://claude.ai/artifact/Vmzqstn6cmwHpYswrjS4pN";                 /* the Coach artifact on claude.ai */
+const APP_URL = "https://utt.tidyassistant.com";   /* the main app */
+const STANDALONE = !window.claude;
+const COACH_MODE = !STANDALONE;                     /* inside Claude: Coach only, XP is sent to the main app */
+const CLAIM_KEY = "utt-coach-claim-v1-7Rk2";
+const LINK_KEY = "utt-coach-link-v1-Q9p4";
+const MAX_CLAIM = 1000;
+const DAILY_GOAL = 50;
+const XP = {lesson:10, visual:5, correct:10, quiz:20, perfect:30, daily:30, structuredBase:15, perMark:2, perPoint:2};
+
+/* =================== STATE =================== */
+const KEY = "utt.coach.v1";
+const DEF = () => ({v:1,name:"",role:null,xp:0,coins:0,days:{},streak:0,best:0,last:null,
+  topics:{},mistakes:[],srs:{},log:[],quizLog:[],badges:{},beepOK:{},
+  n:{quiz:0,perfect:0,daily:0,tutor:0,structured:0,lesson:0,visual:0,photo:0,review:0,subnet:0,trace:0},
+  games:{},daily:null,dailyQ:null,lastTopic:null,subj:"ntwk",lessonDay:{},
+  owned:{},theme:null,look:"auto",avatar:null,coachStyle:null,freezes:0,chestDay:null,
+  parent:{pin:null,rewards:[]},shopTab:"theme",claimed:{},cloud:null,pendXP:0,pendBase:null,created:null});
+let S = DEF();
+try{ const raw = localStorage.getItem(KEY); if(raw) S = Object.assign(DEF(), JSON.parse(raw)); }catch(e){}
+S.n = Object.assign(DEF().n, S.n||{});
+
+const pad = n => String(n).padStart(2,"0");
+const dstr = d => d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());
+const today = () => dstr(new Date());
+const addDays = (k) => { const d=new Date(); d.setDate(d.getDate()+k); return dstr(d); };
+function gapDays(a){ if(!a) return 999; const [y,m,d]=a.split("-").map(Number); const t=new Date(); const x=new Date(y,m-1,d); t.setHours(0,0,0,0); return Math.round((t-x)/86400000); }
+
+/* ---- save: this device, plus the cloud backup (main app) or Claude's storage (Coach) ---- */
+let cloudDoc = null, saveT = null, syncT = null, dirty = false, lastSync = null, syncErr = false;
+function save(){
+  try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){}
+  if(cloudDoc){ clearTimeout(saveT); saveT = setTimeout(()=>{ cloudDoc.set({state:JSON.stringify(S), xp:S.xp, at:Date.now()}).catch(()=>{}); }, 1500); }
+  if(canSync()){ dirty = true; clearTimeout(syncT); syncT = setTimeout(syncNow, 30000); }
+}
+function canSync(){ return STANDALONE && /^https?:/.test(location.protocol) && S.role!=="parent" && !!S.name && !!S.cloud?.code; }
+const CODE_ABC = "abcdefghjkmnpqrstuvwxyz23456789";
+function newCode(){ const b = new Uint8Array(16); crypto.getRandomValues(b); return [...b].map(x=>CODE_ABC[x % CODE_ABC.length]).join(""); }
+const fmtCode = c => (c||"").replace(/(.{4})(?=.)/g,"$1-");
+async function syncNow(){
+  if(!canSync() || !dirty) return;
+  dirty = false; clearTimeout(syncT);
+  try{
+    const r = await fetch("/api/backup/"+S.cloud.code, {method:"PUT", keepalive:true, headers:{"content-type":"application/json"}, body:JSON.stringify({state:S, at:new Date().toISOString()})});
+    if(!r.ok) throw 0; lastSync = new Date(); syncErr = false;
+  }catch(e){ dirty = true; syncErr = true; }
+}
+async function pullCloud(code){
+  const r = await fetch("/api/backup/"+code, {cache:"no-store"});
+  if(r.status===404) return null;
+  if(!r.ok) throw new Error("net");
+  const j = await r.json(); return j && j.state ? j.state : null;
+}
+async function initCloud(){
+  if(COACH_MODE){
+    try{
+      if(!window.claude?.use) return;
+      const [db,user] = await Promise.all([claude.use("db"), claude.use("user")]);
+      if(!db || !user) return;
+      const id = await user.id(); if(!id) return;
+      cloudDoc = db.collection("data/users/"+id).doc("coach");
+      const snap = await cloudDoc.get();
+      if(snap.exists){
+        const remote = JSON.parse(snap.data().state || "{}");
+        const keepPend = S.pendXP||0;
+        if(!S.name && remote.name || (remote.pendXP||0) > keepPend){ S = Object.assign(DEF(), remote); S.n = Object.assign(DEF().n, S.n||{}); try{localStorage.setItem(KEY, JSON.stringify(S));}catch(e){} render(); }
+      } else if(S.name) save();
+    }catch(e){}
+    return;
+  }
+  if(!/^https?:/.test(location.protocol) || S.role==="parent" || !S.name) return;
+  if(!S.cloud?.code){ S.cloud = {code:newCode(), since:today()}; dirty = true; save(); syncNow(); return; }
+  try{
+    const remote = await pullCloud(S.cloud.code);
+    if(remote && (remote.xp||0) > S.xp){ const code=S.cloud.code; S = Object.assign(DEF(), remote); S.n = Object.assign(DEF().n, S.n||{}); S.cloud = Object.assign({}, S.cloud, {code}); try{localStorage.setItem(KEY, JSON.stringify(S));}catch(e){} applyTheme(); render(); toast("Progress restored from your cloud backup"); }
+    else { dirty = true; syncNow(); }
+  }catch(e){ syncErr = true; }
+}
+document.addEventListener("visibilitychange", ()=>{ if(document.visibilityState==="hidden") syncNow(); });
+window.addEventListener("pagehide", ()=>syncNow());
+
+/* =================== LEVELS, XP, STREAKS =================== */
+function liveStreak(){ const g=gapDays(S.last); return g<=1 || (g-1)<=(S.freezes||0) ? S.streak : 0; }
+function levelOf(xp){ let L=1; while(50*L*(L+1) <= xp) L++; return L; }
+function levelFloor(L){ return 50*(L-1)*L; }
+function levelName(L){ return LEVELS[Math.min(L-1, LEVELS.length-1)]; }
+
+function addXP(n, why){
+  n = Math.round(n); if(n<=0) return;
+  if(COACH_MODE){ S.pendXP=(S.pendXP||0)+n; save(); renderHeader(); toast(`+${n} XP · tap "Add XP to app" when you're done`); return; }
+  const before = levelOf(S.xp);
+  S.xp += n; S.coins += n;
+  const t = today(); const prevDay = S.days[t]||0; S.days[t] = prevDay + n;
+  if(S.last !== t){ const g=gapDays(S.last);
+    if(g===1) S.streak++;
+    else if(g>1 && g<900 && (g-1)<=(S.freezes||0)){ S.freezes-=(g-1); S.streak++; setTimeout(()=>toast(`A streak freeze saved your ${S.streak-1}-day streak!`, true),1200); }
+    else S.streak = 1;
+    S.last = t; S.best = Math.max(S.best, S.streak); }
+  const after = levelOf(S.xp);
+  if(after>before){ S.coins += 50; queueModal(()=>showLevelUp(after)); }
+  if(prevDay < DAILY_GOAL && S.days[t] >= DAILY_GOAL && S.chestDay!==t) queueModal(showChest);
+  checkBadges(); checkParentGoals();
+  save(); renderHeader();
+  toast(`+${n} XP · ${why}`);
+}
+function award(id){
+  if(S.badges[id] || COACH_MODE) return;
+  S.badges[id] = today(); S.coins += 25;
+  const b = BADGES.find(x=>x.id===id);
+  queueModal(()=>showBadge(b));
+}
+function masteredCount(){ return TOPICS.filter(t=>masteryState(t.id)==="m").length; }
+function checkBadges(){
+  if(COACH_MODE) return;
+  const st = liveStreak();
+  if(S.n.quiz>=1) award("first");
+  if(S.n.perfect>=1) award("perfect");
+  if(st>=3) award("streak3"); if(st>=7) award("streak7"); if(st>=30) award("streak30");
+  if(S.n.daily>=5) award("daily5");
+  if(S.n.tutor>=20) award("curious");
+  if(S.n.subnet>=10) award("subnet");
+  if(S.n.trace>=10) award("trace");
+  const beeps = BANK.filter(q=>q.tags.includes("beep")); if(beeps.length && beeps.every(q=>S.beepOK[q.id])) award("beep");
+  if(Object.values(S.games).some(b=>b>=15)) award("game");
+  if(masteredCount()>=5) award("master5");
+  if(TOPICS.every(t=>S.topics[t.id]?.quiz)) award("allround");
+  if(S.xp>=1000) award("xp1000");
+  if(S.n.photo>=1) award("photo");
+  if(S.n.review>=1) award("fixer");
+}
+
+/* =================== PROGRESS PER TOPIC =================== */
+function topicStat(id){ return S.topics[id] || (S.topics[id] = {att:0,ok:0,best:0,quiz:0,last:null,time:0,recent:[],lessons:0,wrong:0}); }
+/* Mastery % = accuracy over the last 10 answers in the topic. Labels: Not started · Learning (<50) · Getting there (50-79, or fewer than 5 answers) · Mastered (80%+ with 5+ answers) */
+function masteryPct(id){ const t=S.topics[id]; if(!t || !t.recent?.length) return null; return Math.round(t.recent.reduce((a,b)=>a+b,0)/t.recent.length*100); }
+function masteryState(id){ const t=S.topics[id]; const p=masteryPct(id);
+  if(p===null) return t && (t.lessons) ? "l" : "n";
+  if(p>=80 && t.att>=5) return "m"; if(p>=50 || (p>=80)) return "g"; return "l"; }
+const MLABEL = {n:"Not started", l:"Learning", g:"Getting there", m:"Mastered"};
+const MCLS = {n:"", l:"low", g:"mid", m:"good"};
+function subjPct(s){ const ts=topicsOf(s); return Math.round(ts.reduce((a,t)=>a+(masteryPct(t.id)||0),0)/ts.length); }
+function weakTopics(n=3, s=null){
+  return TOPICS.filter(t=>(!s||t.s===s)).map(t=>({t, p:masteryPct(t.id), st:S.topics[t.id]})).filter(x=>x.p!==null && masteryState(x.t.id)!=="m")
+    .sort((a,b)=>(a.p-b.p) || ((b.st.wrong||0)-(a.st.wrong||0))).slice(0,n).map(x=>x.t);
+}
+function dueReviews(s=null){ const t=today(); return Object.entries(S.srs).filter(([id,r])=>QB[id] && r.due<=t && (!s||QB[id].s===s)).map(([id])=>id); }
+
+/* Record one answered question everywhere it needs to go */
+function recordAnswer(q, ok, ms, mode, chosenText){
+  const st = topicStat(q.t);
+  st.att++; if(ok) st.ok++; else st.wrong++;
+  st.recent.push(ok?1:0); if(st.recent.length>10) st.recent.shift();
+  st.last = today(); st.time += Math.min(Math.max(0,ms||0), 300000);
+  S.log.push({at:new Date().toISOString(), q:q.id, t:q.t, ok:ok?1:0, m:mode, ms:Math.round(ms||0), c:String(chosenText??"").slice(0,80)});
+  if(S.log.length>4000) S.log.splice(0, S.log.length-4000);
+  /* spaced repetition: a missed question comes back tomorrow, then in 3 days, until it's right twice */
+  if(!ok) S.srs[q.id] = {due:addDays(1), ok:0};
+  else if(S.srs[q.id]){ const r=S.srs[q.id]; r.ok++; if(r.ok>=2) delete S.srs[q.id]; else r.due = addDays(3); }
+  if(ok){ if(q.tags.includes("subnet")) S.n.subnet++; if(q.tags.includes("trace")) S.n.trace++; if(q.tags.includes("beep")) S.beepOK[q.id]=1; }
+  if(!ok){ S.mistakes = S.mistakes.filter(m=>m.id!==q.id); S.mistakes.unshift({id:q.id, t:q.t, q:q.q, chosen:String(chosenText??""), correct:answerText(q), fix:q.trap||"", d:today()}); S.mistakes = S.mistakes.slice(0,60); }
+}
+function answerText(q){
+  if(q.ty==="mc") return q.o[q.a];
+  if(q.ty==="tf") return q.a?"True":"False";
+  if(q.ty==="fill") return q.a[0];
+  if(q.ty==="order") return q.o.join(" → ");
+  if(q.ty==="match") return q.o.map(p=>p[0]+" = "+p[1]).join("; ");
+  return "";
+}
+
+/* =================== SIGNING (Coach claim links, parent links) =================== */
+const enc = new TextEncoder();
+async function hmac(key, msg){
+  const k = await crypto.subtle.importKey("raw", enc.encode(key), {name:"HMAC", hash:"SHA-256"}, false, ["sign"]);
+  const sig = new Uint8Array(await crypto.subtle.sign("HMAC", k, enc.encode(msg)));
+  return [...sig.slice(0,8)].map(b=>b.toString(16).padStart(2,"0")).join("");
+}
+async function sha(msg){ const h = new Uint8Array(await crypto.subtle.digest("SHA-256", enc.encode(msg))); return [...h].map(b=>b.toString(16).padStart(2,"0")).join(""); }
+const b64e = o => btoa(unescape(encodeURIComponent(JSON.stringify(o)))).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"");
+const b64d = s => JSON.parse(decodeURIComponent(escape(atob(s.replace(/-/g,"+").replace(/_/g,"/")))));
+
+/* Coach → app: "Add X XP to app". Max 1,000 XP per link; each link id can be used once. */
+function pendingCounts(){ const b=S.pendBase||{}; const f=k=>Math.max(0,(S.n[k]||0)-(b[k]||0)); return {t:f("tutor"), s:f("structured"), p:f("photo"), r:f("review")}; }
+let claimCache = {key:"", url:""};
+async function claimURL(){
+  const x = Math.min(S.pendXP||0, MAX_CLAIM), c = pendingCounts(); S.claimId ||= newCode().slice(0,8);
+  const body = `x${x}t${c.t}s${c.s}p${c.p}r${c.r}-${S.claimId}`;
+  if(claimCache.key===body) return claimCache.url;
+  const url = `${APP_URL}/#claim-${body}-${await hmac(CLAIM_KEY, body)}`;
+  claimCache = {key:body, url}; return url;
+}
+function markClaimSent(){
+  const x = Math.min(S.pendXP||0, MAX_CLAIM);
+  S.pendXP = Math.max(0,(S.pendXP||0)-x);
+  S.pendBase = {tutor:S.n.tutor, structured:S.n.structured, photo:S.n.photo, review:S.n.review};
+  S.claimId = null; save(); renderHeader();
+}
+async function handleClaim(){
+  const m = location.hash.match(/^#claim-(x(\d+)t(\d+)s(\d+)p(\d+)r(\d+)-([a-z0-9]+))-([0-9a-f]{16})$/);
+  if(!m || COACH_MODE) return;
+  try{ history.replaceState(null,"",location.pathname); }catch(e){ location.hash=""; }
+  if(S.role==="parent"){ toast("That's a Coach points link for Suri's phone."); return; }
+  const [_,body,x,t,s2,p,r,id,sig] = m;
+  if(await hmac(CLAIM_KEY, body)!==sig){ toast("That points link didn't work."); return; }
+  if(S.claimed[id]){ toast("Those Coach points were already added."); return; }
+  S.claimed[id]=today(); const keys=Object.keys(S.claimed); if(keys.length>300) delete S.claimed[keys[0]];
+  S.n.tutor+=+t; S.n.structured+=+s2; S.n.photo+=+p; S.n.review+=+r;
+  if(+x>0) addXP(Math.min(+x,MAX_CLAIM), "from Coach"); else { checkBadges(); save(); toast("Coach activity added"); }
+  if(+s2>0) checkParentGoals();
+}
+async function signed(kind, o){ const d=b64e(o); return `${APP_URL}/#${kind}-${d}-${await hmac(LINK_KEY, kind+"|"+d)}`; }
+async function readSigned(kind){
+  const m = location.hash.match(new RegExp("^#"+kind+"-([A-Za-z0-9_-]+)-([0-9a-f]{16})$")); if(!m) return null;
+  try{ history.replaceState(null,"",location.pathname); }catch(e){}
+  if(await hmac(LINK_KEY, kind+"|"+m[1])!==m[2]) { toast("That link looks damaged. Ask for it to be sent again."); return null; }
+  try{ return b64d(m[1]); }catch(e){ toast("That link looks damaged. Ask for it to be sent again."); return null; }
+}
+
+/* App → Coach: open the Coach on a topic / mode, carrying her name, style and mistakes */
+function coachLink(opts={}){
+  const o = {n:S.name||"", st:S.coachStyle||"", s:opts.s||S.subj||"", t:opts.t||"", m:opts.m||""};
+  if(opts.mistakes) o.k = opts.mistakes.slice(0,8).map(x=>({t:x.t, q:String(x.q).slice(0,220), c:String(x.chosen).slice(0,80), a:String(x.correct).slice(0,120)}));
+  return ONLINE_URL + "#go-" + b64e(o);
+}
+
+/* =================== MARKDOWN =================== */
+const esc = s => String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+function inl(s){
+  s = esc(s);
+  s = s.replace(/`([^`]+)`/g,"<code>$1</code>");
+  s = s.replace(/\*\*([^*]+)\*\*/g,"<strong>$1</strong>");
+  s = s.replace(/(^|[\s(])\*([^*\n]+)\*(?=[\s).,!?:;]|$)/g,"$1<em>$2</em>");
+  return s;
+}
+function mdTable(rows){
+  const cells = r => r.trim().replace(/^\|/,"").replace(/\|$/,"").split("|").map(c=>c.trim());
+  const isSep = r => /^\s*\|?\s*:?-{2,}/.test(r) && /^[\s|:\-]+$/.test(r);
+  let head = null, body = rows;
+  if(rows.length>1 && isSep(rows[1])){ head = cells(rows[0]); body = rows.slice(2); }
+  body = body.filter(r=>!isSep(r));
+  let h = '<div class="tbl"><table>';
+  if(head) h += "<thead><tr>"+head.map(c=>"<th>"+inl(c)+"</th>").join("")+"</tr></thead>";
+  h += "<tbody>"+body.map(r=>"<tr>"+cells(r).map(c=>"<td>"+inl(c)+"</td>").join("")+"</tr>").join("")+"</tbody></table></div>";
+  return h;
+}
+function md(src){
+  const L = String(src||"").replace(/\r/g,"").split("\n"); const out=[]; let i=0;
+  const startRe = /^(```|#{1,6}\s|\s*[-*•]\s+|\s*\d+[.)]\s+|\s*\|.*\|\s*$|\s*(---|\*\*\*)\s*$)/;
+  while(i<L.length){
+    const l = L[i];
+    if(/^```/.test(l)){ const lang=(l.match(/^```\s*([\w-]+)/)||[])[1]; const b=[]; i++; let closed=false; while(i<L.length){ if(/^```/.test(L[i])){ closed=true; break; } b.push(L[i++]); } i++;
+      const vis = lang && VIS_FENCE[lang.toLowerCase()] ? (closed ? fenceVisual(lang, b.join("\n")) : `<p class="muted"><i>Drawing a diagram…</i></p>`) : null;
+      out.push(vis || "<pre>"+esc(b.join("\n"))+"</pre>"); continue; }
+    if(/^\s*\|.*\|\s*$/.test(l)){ const r=[]; while(i<L.length && /^\s*\|.*\|\s*$/.test(L[i])) r.push(L[i++]); out.push(mdTable(r)); continue; }
+    const h = l.match(/^(#{1,6})\s+(.*)/); if(h){ const lv=Math.min(6,h[1].length+2); out.push(`<h${lv}>${inl(h[2])}</h${lv}>`); i++; continue; }
+    if(/^\s*[-*•]\s+/.test(l)){ const it=[]; while(i<L.length && /^\s*[-*•]\s+/.test(L[i])) it.push(L[i++].replace(/^\s*[-*•]\s+/,"")); out.push("<ul>"+it.map(x=>"<li>"+inl(x)+"</li>").join("")+"</ul>"); continue; }
+    if(/^\s*\d+[.)]\s+/.test(l)){ const it=[]; const st=parseInt(l,10)||1; while(i<L.length && /^\s*\d+[.)]\s+/.test(L[i])) it.push(L[i++].replace(/^\s*\d+[.)]\s+/,"")); out.push(`<ol start="${st}">`+it.map(x=>"<li>"+inl(x)+"</li>").join("")+"</ol>"); continue; }
+    if(/^\s*(---|\*\*\*)\s*$/.test(l)){ out.push("<hr>"); i++; continue; }
+    if(!l.trim()){ i++; continue; }
+    const p=[L[i++]]; while(i<L.length && L[i].trim() && !startRe.test(L[i])) p.push(L[i++]);
+    out.push("<p>"+inl(p.join(" "))+"</p>");
+  }
+  return out.join("");
+}
+/* Diagrams the Coach can draw from small JSON blocks */
+function flowHTML(d){ const st=(d.steps||[]).map(x=>typeof x==="string"?{t:x}:x);
+  return `<div class="vis">${d.title?`<div class="vis-title">${esc(d.title)}</div>`:""}<div class="flow">${st.map((s,k)=>`${k?'<div class="ar">▼</div>':""}<div class="fs ${s.shape||""}"><span class="n">${k+1}</span><div><b>${esc(s.t)}</b>${s.s?`<small>${esc(s.s)}</small>`:""}</div></div>`).join("")}</div></div>`; }
+function layersHTML(d){ const cols=["#E0533D","#E98A2E","#D9B21C","#47A34B","#2F8FB5","#3C63C9","#7A4CC8"];
+  return `<div class="vis">${d.title?`<div class="vis-title">${esc(d.title)}</div>`:""}<div class="layers">${(d.rows||[]).map((r,k,a)=>{ const [n,lab,sub]=Array.isArray(r)?r:[r.n,r.t,r.s]; const c=cols[(+n||a.length-k)-1]||cols[k%7]; return `<div class="lay" style="--c:${c}"><span class="ln">${esc(n??"")}</span><b>${esc(lab)}</b>${sub?`<small>${esc(sub)}</small>`:""}</div>`; }).join("")}</div></div>`; }
+function compareHTML(d){ return `<div class="vis">${d.title?`<div class="vis-title">${esc(d.title)}</div>`:""}<div class="cmp">${(d.cols||[]).map(c=>`<div><h4>${esc(c.h)}</h4><ul>${(c.items||[]).map(i=>`<li>${esc(i)}</li>`).join("")}</ul></div>`).join("")}</div></div>`; }
+const VIS_FENCE = {flow:flowHTML, flowchart:flowHTML, layers:layersHTML, compare:compareHTML};
+function fenceVisual(lang, body){ try{ return VIS_FENCE[lang.toLowerCase()](JSON.parse(body)); }catch(e){ return "<pre>"+esc(body)+"</pre>"; } }
+
+/* =================== UI HELPERS =================== */
+const $ = s => document.querySelector(s);
+const ICON = {
+  home:'<path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/>',
+  book:'<path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2z"/><path d="M4 21V5M8 7h7M8 11h7"/>',
+  chat:'<path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1.1-4.6A8 8 0 1 1 21 12z"/><path d="M9 11h.01M12 11h.01M15 11h.01"/>',
+  target:'<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.5"/>',
+  gift:'<rect x="3" y="8" width="18" height="4" rx="1"/><path d="M12 8v13M5 12v9h14v-9M12 8c-1.5-3-5-4-5.5-2S9 8 12 8zm0 0c1.5-3 5-4 5.5-2S15 8 12 8z"/>',
+  flame:'<path d="M12 2c1 4 5 5.5 5 11a5 5 0 0 1-10 0c0-2.5 1.2-4 2.5-5 .3 1.6 1 2.6 2 3 .2-3.5-.5-6.5.5-9z" fill="currentColor" stroke="none"/>',
+  send:'<path d="M4 12l16-8-6 16-2.5-6.5z"/>',
+  cam:'<path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/>',
+  stop:'<rect x="7" y="7" width="10" height="10" rx="1.5" fill="currentColor"/>',
+  net:'<circle cx="12" cy="5" r="2.2"/><circle cx="5" cy="18" r="2.2"/><circle cx="19" cy="18" r="2.2"/><circle cx="12" cy="13" r="2.2"/><path d="M12 7.2v3.6M10.3 14.4l-3.6 2.2M13.7 14.4l3.6 2.2"/>',
+  code:'<path d="M8 8l-4 4 4 4M16 8l4 4-4 4M13.5 5l-3 14"/>',
+  chip:'<rect x="6" y="6" width="12" height="12" rx="2"/><rect x="9.5" y="9.5" width="5" height="5" rx="1"/><path d="M9 3v3M12 3v3M15 3v3M9 18v3M12 18v3M15 18v3M3 9h3M3 12h3M3 15h3M18 9h3M18 12h3M18 15h3"/>',
+};
+const ico = n => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICON[n]}</svg>`;
+let toastT;
+function toast(msg, gold){ const t=$("#toast"); t.textContent=msg; t.className="toast show"+(gold?" gold":""); clearTimeout(toastT); toastT=setTimeout(()=>t.className="toast",2600); }
+function thinking(label="Coach is thinking"){ return `<span class="thinking"><span class="dots"><i></i><i></i><i></i></span>${esc(label)}…</span>`; }
+const shuffle = a => { a=a.slice(); for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; };
+function hashStr(s){ let h=2166136261; for(const c of s){ h^=c.charCodeAt(0); h=Math.imul(h,16777619); } return h>>>0; }
+const fmtTime = ms => { const m=Math.round((ms||0)/60000); return m<60 ? m+"m" : Math.floor(m/60)+"h "+(m%60)+"m"; };
+const fmtDate = s => { if(!s) return "–"; const g=gapDays(s); return g===0?"Today":g===1?"Yesterday":g<7?g+" days ago":s; };
+function applyTheme(){
+  document.body.className = S.theme && S.theme!=="th-circuit" ? S.theme : "";
+  const r = document.documentElement; if(S.look==="light"||S.look==="dark") r.dataset.theme=S.look; else delete r.dataset.theme;
+}
+function avatarFace(){ const it = SHOP.find(x=>x.id===S.avatar); return it ? it.ic : (S.name||"?").trim().charAt(0).toUpperCase(); }
+function masteryChip(id){ const st=masteryState(id), p=masteryPct(id); return `<span class="mastery ${MCLS[st]}">${st==="n"?"New":st==="m"?"✓ "+p+"%":p===null?MLABEL[st]:p+"%"}</span>`; }
+
+/* ---- modal / celebrations ---- */
+function modal(html, onMount){
+  const root=$("#modalRoot"); root.innerHTML = `<div class="modal" role="dialog" aria-modal="true"><div class="box">${html}</div></div>`;
+  const close=()=>{ root.innerHTML=""; runModalQueue(); };
+  root.querySelector(".modal").addEventListener("click", e=>{ if(e.target.classList.contains("modal") && !root.querySelector(".chest")) close(); });
+  onMount && onMount(root, close);
+}
+const modalQueue=[]; function queueModal(fn){ modalQueue.push(fn); if(!$("#modalRoot").innerHTML) runModalQueue(); }
+function runModalQueue(){ const fn = modalQueue.shift(); if(fn) setTimeout(fn, 250); }
+function confetti(){
+  if(window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  const c=document.createElement("div"); c.className="confetti";
+  const cols=["#F4C84A","#2F6FEB","#7A3FD1","#D0581A","#0E7C7B","#BF3A2B"];
+  c.innerHTML = Array.from({length:60},()=>`<i style="left:${Math.random()*100}%;background:${cols[Math.floor(Math.random()*cols.length)]};animation-delay:${Math.random()*.5}s;animation-duration:${1.4+Math.random()}s"></i>`).join("");
+  document.body.appendChild(c); setTimeout(()=>c.remove(), 3000);
+}
+function showChest(){
+  modal(`<span class="eyebrow">Daily goal reached</span><h2>You earned a treasure chest!</h2><button class="chest" id="chestBtn" aria-label="Open the chest">🎁</button><p class="muted" style="margin:0">Tap to open it.</p>`, (root, close)=>{
+    $("#chestBtn").onclick = ()=>{
+      const lockedAv = SHOP.filter(x=>x.kind==="avatar" && !S.owned[x.id]);
+      const r = Math.random(); let prize;
+      if(r<0.2 && lockedAv.length){ const a=lockedAv[Math.floor(Math.random()*lockedAv.length)]; S.owned[a.id]=1; prize={ic:a.ic, t:`New avatar: ${a.n}!`, s:"Equip it in the Rewards shop."}; }
+      else if(r<0.32 && (S.freezes||0)<2){ S.freezes=(S.freezes||0)+1; prize={ic:"🧊", t:"A streak freeze!", s:"It protects your streak if you miss a day."}; }
+      else { const c = 25 + Math.floor(Math.random()*51); S.coins+=c; prize={ic:"🪙", t:`${c} coins!`, s:"Spend them in the Rewards shop."}; }
+      S.chestDay = today(); save(); renderHeader(); confetti();
+      root.querySelector(".box").innerHTML = `<span class="eyebrow">Chest opened</span><div class="prize">${prize.ic}</div><h2>${esc(prize.t)}</h2><p class="muted" style="margin:0">${esc(prize.s)}</p><button class="btn block" id="mClose">Nice!</button>`;
+      $("#mClose").onclick = close;
+    };
+  });
+}
+function showLevelUp(L){
+  const biz = EMPIRE[Math.min(L-1, EMPIRE.length-1)];
+  confetti();
+  modal(`<span class="eyebrow">Level ${L}</span><h2>Promoted to ${esc(levelName(L))}!</h2><div class="prize">${biz.ic}</div><b>Tech Empire unlocked: ${esc(biz.n)}</b><p class="muted" style="margin:0">${esc(biz.f)}</p><span class="price"><span class="coinico">c</span> +50 coins</span><button class="btn block" id="mClose">Keep going</button>`, (r,close)=>{ $("#mClose").onclick=close; });
+}
+function showBadge(b){
+  confetti();
+  modal(`<span class="eyebrow">Badge unlocked</span><div class="badge got" style="border:0;background:none;opacity:1"><div class="medal" style="width:72px;height:72px;font-size:22px">${esc(b.m)}</div></div><h2>${esc(b.n)}</h2><p class="muted" style="margin:0">${esc(b.d)}</p><span class="price"><span class="coinico">c</span> +25 coins</span><button class="btn block" id="mClose">Awesome</button>`, (r,close)=>{ $("#mClose").onclick=close; });
+}
+function goalNow(type){ return type==="level"?levelOf(S.xp):type==="streak"?S.best:type==="xp"?S.xp:type==="mastered"?masteredCount():type==="structured"?S.n.structured:type==="daily"?S.n.daily:0; }
+function checkParentGoals(){
+  (S.parent.rewards||[]).forEach(r=>{ if(!r.reached && goalNow(r.type) >= r.target){ r.reached = today(); queueModal(()=>{ confetti(); modal(`<span class="eyebrow">Real-life reward unlocked</span><div class="prize">🏆</div><h2>${esc(r.title)}</h2><p style="margin:0">You hit <b>${esc(GOALS[r.type])} ${r.target}</b>. Real-life reward unlocked — show this to your parent to claim it!</p><button class="btn gold block" id="mClose">I'll show them</button>`, (x,close)=>{ $("#mClose").onclick=close; }); }); } });
+}
+
+/* =================== ROUTER =================== */
+let tab = "home", sub = null;
+const TABS = [["home","Home","home"],["topics","Topics","book"],["tutor","Coach","chat"],["practice","Practice","target"],["rewards","Rewards","gift"]];
+function go(t, s=null){ stopGame(); stopQuizTimer(); tab=t; sub=s; render(); window.scrollTo({top:0}); }
+function renderTabs(){
+  const list = COACH_MODE ? [["tutor","Coach","chat"],["topics","Lessons","book"],["practice","Structured","target"]] : S.role==="parent" ? [["parenthome","Rewards","gift"]] : TABS;
+  document.querySelector("nav.tabs").hidden = S.role==="parent" || (!S.name && !COACH_MODE);
+  $("#tabs").style.gridTemplateColumns = `repeat(${list.length},1fr)`;
+  const cur = ["quiz","game","structured"].includes(tab) ? "practice" : tab==="me" ? "rewards" : tab==="parent" ? "rewards" : tab;
+  $("#tabs").innerHTML = list.map(([id,label,ic])=>`<button class="${cur===id?"on":""}" data-tab="${id}" aria-current="${cur===id?"page":"false"}">${ico(ic)}<span>${label}</span></button>`).join("");
+  $("#tabs").querySelectorAll("button").forEach(b=>b.onclick=()=>go(b.dataset.tab));
+}
+async function renderHeader(){
+  if(COACH_MODE){
+    $("#hdrAv").hidden=true; $("#hdrBar").parentElement.hidden=true; $("#hdrStreak").hidden=true;
+    $("#brand").innerHTML = "UTT Study <small>COACH</small>";
+    const pend=S.pendXP||0, c=pendingCounts(), any = pend||c.t||c.s||c.p||c.r;
+    const show = Math.min(pend, MAX_CLAIM);
+    $("#hdrCoins").innerHTML = any ? `<a href="#" id="sendPts">Add ${show} XP to app ↗</a>` : `<a href="${APP_URL}" target="_blank" rel="noopener">Open app ↗</a>`;
+    const sp=$("#sendPts");
+    if(sp){ const url = await claimURL(); sp.href=url; sp.target="_blank"; sp.rel="noopener"; sp.onclick=()=>setTimeout(()=>{ markClaimSent(); if(S.pendXP>0) toast(`${S.pendXP} XP still waiting. Tap again to send the rest.`); },300); }
+    return;
+  }
+  const isP = S.role==="parent", hide = isP || !S.name;
+  $("#hdrAv").hidden=hide; $("#hdrStreak").hidden=hide; $("#hdrCoins").hidden=hide; $("#hdrBar").parentElement.hidden=hide;
+  $("#brand").innerHTML = isP ? "UTT Study <small>PARENT</small>" : "UTT Study Coach";
+  const L = levelOf(S.xp), lo = levelFloor(L), hi = levelFloor(L+1);
+  $("#hdrStreak").innerHTML = ico("flame")+liveStreak();
+  $("#hdrCoins").innerHTML = `<span class="coinico">c</span>`+S.coins.toLocaleString();
+  const av=$("#hdrAv"); av.textContent = avatarFace(); av.onclick = ()=>go("me");
+  $("#hdrBar").style.width = Math.round((S.xp-lo)/(hi-lo)*100)+"%";
+}
+function render(){
+  renderHeader(); renderTabs();
+  const v = $("#view");
+  if(COACH_MODE && !["tutor","topics","practice","structured"].includes(tab)) tab="tutor";
+  if(S.role==="parent" && S.name) tab="parenthome"; else if(tab==="parenthome") tab="home";
+  if(!S.name){ return COACH_MODE ? viewCoachWelcome(v) : viewWelcome(v); }
+  ({home:viewHome, topics:viewTopics, tutor:viewTutor, practice:viewPractice, me:viewMe, quiz:viewQuiz, game:viewGame, structured:viewStructured, rewards:viewRewards, parent:viewParent, parenthome:viewParentHome})[tab](v);
+}
+
+/* =================== WELCOME =================== */
+function viewWelcome(v){
+  v.innerHTML = `
+  <div class="hero"><div class="circuit"></div>
+    <span class="eyebrow">UTT · Diploma in Software Engineering · Year 1</span>
+    <h2>Networks, Python and hardware, one step at a time.</h2>
+    <p style="margin:0">Short lessons with pictures, quizzes that explain your mistakes, a Coach you can ask anything, and rewards for every bit of effort.</p>
+  </div>
+  <div class="card"><form id="wf" class="view" style="gap:12px">
+    <div><label class="lab" for="nm">What should Coach call you?</label>
+    <input class="field" id="nm" maxlength="30" autocomplete="given-name" placeholder="Your first name" value="Suri" required></div>
+    <button class="btn block" type="submit">Start studying</button>
+  </form></div>
+  <div class="card"><span class="eyebrow">New phone?</span><p style="margin:6px 0 10px">Bring back your XP, streak and progress with your backup code.</p>
+    <div class="row" style="flex-wrap:nowrap"><input class="field mono" id="rcode" placeholder="xxxx-xxxx-xxxx-xxxx" autocomplete="off" autocapitalize="off"><button class="btn sm" id="rgo">Restore</button></div></div>
+  <div class="card"><span class="eyebrow">Parents</span><p style="margin:6px 0 10px">Setting up real-life rewards from your own phone?</p><button class="btn line block" id="asParent">I'm a parent</button></div>`;
+  $("#asParent").onclick = ()=>{ S.role="parent"; S.name="Parent"; save(); go("parenthome"); };
+  $("#wf").onsubmit = e => { e.preventDefault(); const n=$("#nm").value.trim(); if(!n) return; S.name=n; S.created ||= today(); save(); initCloud(); go("home"); };
+  $("#rgo").onclick = ()=>restoreFrom($("#rcode").value);
+}
+async function restoreFrom(raw){
+  const code = String(raw||"").toLowerCase().replace(/[^a-z0-9]/g,"");
+  if(!/^[a-z2-9]{16}$/.test(code)){ toast("That code should be 16 letters and numbers."); return; }
+  try{
+    const remote = await pullCloud(code);
+    if(!remote){ toast("No backup found for that code."); return; }
+    S = Object.assign(DEF(), remote); S.n = Object.assign(DEF().n, S.n||{}); S.cloud = {code, since:S.cloud?.since||today()}; S.role=null;
+    save(); applyTheme(); toast(`Welcome back, ${S.name}! Progress restored.`, true); go("home");
+  }catch(e){ toast("Couldn't reach the backup. Check your internet and try again."); }
+}
+
+/* =================== HOME =================== */
+function pickDaily(){
+  if(S.dailyQ?.d===today() && QB[S.dailyQ.id]) return QB[S.dailyQ.id];
+  const due = dueReviews(); const weak = weakTopics(3).map(t=>t.id);
+  let pool = due.length ? due.map(id=>QB[id]) : weak.length ? BANK.filter(q=>weak.includes(q.t)) : BANK;
+  if(!pool.length) pool = BANK;
+  const q = pool[hashStr(today()+"utt") % pool.length];
+  S.dailyQ = {d:today(), id:q.id}; save(); return q;
+}
+function viewHome(v){
+  const h = new Date().getHours();
+  const greet = h<12?"Good morning":h<17?"Good afternoon":"Good evening";
+  const todayXP = S.days[today()]||0, pct = Math.min(100, Math.round(todayXP/DAILY_GOAL*100));
+  const L = levelOf(S.xp), st = liveStreak();
+  const dq = pickDaily(); const done = S.daily===today();
+  const weak = weakTopics(3);
+  const last = S.lastTopic && TOPIC[S.lastTopic];
+  const due = dueReviews().length;
+  v.innerHTML = `
+  <div class="hero"><div class="circuit"></div>
+    <span class="eyebrow">${esc(levelName(L))} · Level ${L}</span>
+    <h2>${greet}, ${esc(S.name)}.</h2>
+    <div class="goal"><div class="ring" style="--p:${pct}"><b>${todayXP}/${DAILY_GOAL}</b></div>
+      <div>${pct>=100?"<b>Daily goal smashed.</b> Anything extra is a bonus.":`<b>Today's goal: ${DAILY_GOAL} XP.</b> ${DAILY_GOAL-todayXP} XP to go.`}<br><span style="opacity:.88">${st?`Keep your ${st}-day streak alive 🔥`:"Earn any XP today to start a streak."}</span></div></div>
+    <div class="stats">
+      <div class="stat"><b>${st}</b><span>day streak</span></div>
+      <div class="stat"><b>${Object.keys(S.badges).length}/${BADGES.length}</b><span>badges</span></div>
+      <div class="stat"><b>${due}</b><span>to review</span></div>
+    </div>
+  </div>
+
+  ${last?`<div class="card s-${last.s}"><span class="eyebrow">Continue where you left off</span><div class="row between" style="margin-top:4px;flex-wrap:nowrap"><div style="min-width:0"><span class="eyebrow" style="color:var(--sub)">${esc(SUBJ[last.s].code)}</span><h3 style="margin:2px 0 0">${esc(last.name)}</h3></div>${masteryChip(last.id)}</div><button class="btn sub block" id="hLast" style="margin-top:10px">Continue</button></div>`:""}
+
+  <div class="sec-h"><h3>Your subjects</h3></div>
+  <div class="subjects">${SUBJECTS.map(s=>`<button class="subjcard s-${s.id}" data-subj="${s.id}"><span class="ic">${ico(s.ic)}</span><span style="min-width:0"><span class="code">${s.code}</span><b>${esc(s.name)}</b><div class="bar" style="margin-top:6px"><i style="width:${subjPct(s.id)}%"></i></div></span><span class="pct">${subjPct(s.id)}%</span></button>`).join("")}</div>
+
+  <div class="card s-${dq.s}">
+    <div class="row between"><span class="eyebrow">Daily challenge · ${esc(SUBJ[dq.s].name)}</span><span class="score">+${XP.daily} XP</span></div>
+    ${done?`<p style="margin:8px 0 0"><b>Done for today.</b> A new challenge unlocks tomorrow. Daily challenges completed: ${S.n.daily}.</p>`:
+    `<p class="qtext" style="margin:8px 0 12px">${esc(dq.q)}</p><button class="btn gold block" id="dqGo">Answer today's challenge</button>`}
+  </div>
+
+  <div class="card">
+    <span class="eyebrow">${weak.length?"Your 3 weakest topics":"Where to start"}</span>
+    <div class="tlist" style="margin-top:8px">${(weak.length?weak:[TOPIC.n6,TOPIC.l4,TOPIC.c1]).map(t=>topicRow(t)).join("")}</div>
+    ${weak.length?`<button class="btn gold block" id="hWeak" style="margin-top:10px">Practise these</button>`:""}
+  </div>
+
+  ${STANDALONE && !window.matchMedia("(display-mode: standalone)").matches && !S.hideInstall ? `<div class="card"><span class="eyebrow">Use it like an app</span><h3 style="margin-top:4px">Add it to your home screen</h3>
+    <p class="muted" style="margin:0 0 10px;font-size:14px">${installEvt?"Tap Install and it opens like a normal app, even offline.":"<b>iPhone:</b> tap Share, then <i>Add to Home Screen</i>. <b>Android:</b> tap ⋮, then <i>Install app</i>."}</p>
+    <div class="row">${installEvt?`<button class="btn sm" id="instBtn">Install</button>`:""}<button class="btn line sm" id="instHide">Hide</button></div></div>`:""}
+  <div class="grid2">
+    <a class="btn" id="hAsk" href="${esc(coachLink())}" target="_blank" rel="noopener">${ico("chat")} Ask Coach ↗</a>
+    <button class="btn ghost" id="hGame">⚡ Speed games</button>
+  </div>`;
+  if(!done) $("#dqGo").onclick = ()=> startQuiz({mode:"daily", ids:[dq.id], title:"Daily challenge"});
+  if(last) $("#hLast").onclick = ()=> go("topics", last.id);
+  if($("#hWeak")) $("#hWeak").onclick = ()=> startQuiz({mode:"weak", topics:weak.map(t=>t.id), n:6, title:"Your weak spots"});
+  if($("#instHide")) $("#instHide").onclick = ()=>{ S.hideInstall=true; save(); render(); };
+  if($("#instBtn")) $("#instBtn").onclick = async ()=>{ try{ installEvt.prompt(); await installEvt.userChoice; }catch(e){} installEvt=null; render(); };
+  $("#hGame").onclick = ()=> go("practice", "games");
+  v.querySelectorAll("[data-subj]").forEach(b=>b.onclick=()=>{ S.subj=b.dataset.subj; save(); go("topics"); });
+  bindTopicRows(v);
+}
+function topicRow(t){
+  const n = topicsOf(t.s).indexOf(t)+1;
+  return `<button class="titem s-${t.s}" data-topic="${t.id}"><span class="num">${pad(n)}</span><span><b>${esc(t.name)}</b><span class="sub">${COACH_MODE?"":esc(SUBJ[t.s].code)+" · "}${esc(t.short)}</span></span>${COACH_MODE?"":masteryChip(t.id)}</button>`;
+}
+function bindTopicRows(v){ v.querySelectorAll("[data-topic]").forEach(b=>b.onclick=()=>go("topics", b.dataset.topic)); }
+
+/* =================== TOPICS =================== */
+function subjPicker(cur){ return `<div class="segsub">${SUBJECTS.map(s=>`<button class="s-${s.id} ${cur===s.id?"on":""}" data-ps="${s.id}">${esc(s.name)}<small>${s.code}</small></button>`).join("")}</div>`; }
+function bindSubjPicker(v, after){ v.querySelectorAll("[data-ps]").forEach(b=>b.onclick=()=>{ S.subj=b.dataset.ps; save(); after ? after() : render(); }); }
+function viewTopics(v){
+  if(sub && TOPIC[sub]) return COACH_MODE ? viewCoachTopic(v, TOPIC[sub]) : viewTopic(v, TOPIC[sub]);
+  const s = SUBJ[S.subj] || SUBJECTS[0];
+  const ts = topicsOf(s.id);
+  const tried = ts.filter(t=>S.topics[t.id]?.att).length;
+  v.innerHTML = `${subjPicker(s.id)}
+  <div class="hero subj s-${s.id}"><div class="circuit"></div><span class="eyebrow">${s.code}</span><h2>${esc(s.full)}</h2>
+    ${COACH_MODE?`<p style="margin:0">Pick a topic for a step-by-step lesson, a worked example or a diagram.</p>`:`<div class="stats"><div class="stat"><b>${subjPct(s.id)}%</b><span>progress</span></div><div class="stat"><b>${tried}/${ts.length}</b><span>topics tried</span></div><div class="stat"><b>${ts.filter(t=>masteryState(t.id)==="m").length}</b><span>mastered</span></div></div>`}</div>
+  ${COACH_MODE?"":`<div class="card s-${s.id}"><span class="eyebrow">How you pass</span><p style="margin:6px 0 10px"><b>${esc(s.pass)}</b></p>
+    <div style="display:flex;height:12px;border-radius:6px;overflow:hidden;gap:2px">${s.assess.map(([n,w],k)=>`<i title="${esc(n)}" style="flex:${w};background:var(--sub);opacity:${1-k*0.2}"></i>`).join("")}</div>
+    <div class="view" style="gap:2px;margin-top:8px;font-size:13px">${s.assess.map(([n,w])=>`<div class="row between"><span>${esc(n)}</span><b class="mono">${w}%</b></div>`).join("")}</div></div>`}
+  <div class="tlist">${ts.map(topicRow).join("")}</div>`;
+  bindSubjPicker(v); bindTopicRows(v);
+}
+function viewTopic(v, t){
+  S.lastTopic = t.id; S.subj = t.s; save();
+  const st = S.topics[t.id], s = SUBJ[t.s], ms = masteryState(t.id), p = masteryPct(t.id);
+  const nQ = BANK.filter(q=>q.t===t.id).length;
+  v.innerHTML = `
+  <button class="back" id="bk">← ${esc(s.name)} topics</button>
+  <div class="hero subj s-${t.s}"><div class="circuit"></div><span class="eyebrow">${s.code} · Topic ${topicsOf(t.s).indexOf(t)+1}</span><h2>${esc(t.name)}</h2>
+   <div class="row" style="flex-wrap:nowrap"><div class="bar" style="flex:1;background:rgba(255,255,255,.25)"><i style="width:${p||0}%;background:#FFC94A"></i></div><b style="font-size:14px">${MLABEL[ms]}${p!==null?" · "+p+"%":""}</b></div></div>
+  <div class="card s-${t.s}"><span class="eyebrow">What you'll learn</span><ul class="learnlist" style="margin-top:8px">${t.learn.map((x,k)=>`<li><span>${"abcdefg"[k]}</span><div>${esc(x)}</div></li>`).join("")}</ul></div>
+  <div class="card s-${t.s}"><span class="eyebrow">Picture lessons</span><p style="margin:6px 0 0">Step-by-step lessons with diagrams, ⚠️ Tricky Bits and ❌ Common Mistakes for this topic are coming in the next update. Until then, Coach can teach it to you with pictures.</p></div>
+  <div class="grid2 s-${t.s}">
+    <button class="btn gold" id="tQuiz" ${nQ?"":"disabled"}>Quiz me (5)</button>
+    <a class="btn sub" href="${esc(coachLink({t:t.id, m:"lesson"}))}" target="_blank" rel="noopener">Learn with Coach ↗</a>
+    <a class="btn subghost" href="${esc(coachLink({t:t.id, m:"work"}))}" target="_blank" rel="noopener">Work it with me ↗</a>
+    <a class="btn subghost" href="${esc(coachLink({t:t.id}))}" target="_blank" rel="noopener">Ask Coach ↗</a>
+  </div>
+  ${nQ?"":`<p class="muted" style="margin:0;font-size:14px">Quiz questions for this topic arrive with the ${esc(s.name)} update.</p>`}
+  ${st?.att?`<div class="card"><span class="eyebrow">Your record</span><div class="stats" style="margin-top:8px">${[["Answered",st.att],["Correct",Math.round(st.ok/st.att*100)+"%"],["Best quiz",st.quiz?st.best+"%":"–"]].map(([a,b])=>`<div class="stat" style="background:var(--bg)"><b>${b}</b><span>${a}</span></div>`).join("")}</div><p class="muted" style="margin:8px 0 0;font-size:13px">Time spent ${fmtTime(st.time)} · last studied ${fmtDate(st.last)}</p></div>`:""}`;
+  $("#bk").onclick = ()=>{ go("topics"); };
+  $("#tQuiz").onclick = ()=>startQuiz({mode:"topic", topics:[t.id], n:5, title:t.name});
+}
+
+/* =================== QUIZ ENGINE =================== */
+let Q = null, qTimer = null;
+function stopQuizTimer(){ if(qTimer){ clearInterval(qTimer); qTimer=null; } }
+function pickQuestions({mode, topics, ids, n=5, s}){
+  if(ids) return ids.filter(id=>QB[id]);
+  const due = new Set(dueReviews());
+  const wrongEver = new Set(S.mistakes.map(m=>m.id));
+  let pool = BANK;
+  if(topics) pool = BANK.filter(q=>topics.includes(q.t));
+  else if(s) pool = BANK.filter(q=>q.s===s);
+  if(mode==="fix"){
+    const weak = new Set(weakTopics(3, s).map(t=>t.id));
+    const score = q => (due.has(q.id)?100:0) + (wrongEver.has(q.id)?50:0) + (weak.has(q.t)?20:0) + Math.random()*10;
+    return pool.map(q=>[q,score(q)]).sort((a,b)=>b[1]-a[1]).slice(0,n).map(x=>x[0].id);
+  }
+  if(mode==="exam") return shuffle(pool).slice(0,n).map(q=>q.id);
+  const first = shuffle(pool.filter(q=>due.has(q.id))).slice(0, Math.ceil(n/3));
+  const rest = shuffle(pool.filter(q=>!first.includes(q)));
+  return shuffle(first.concat(rest).slice(0,n)).map(q=>q.id);
+}
+function prepItem(id){
+  const q = QB[id], it = {id};
+  if(q.ty==="mc") it.ord = shuffle(q.o.map((_,k)=>k));
+  if(q.ty==="order"){ let o; do{ o = shuffle(q.o.map((_,k)=>k)); }while(q.o.length>1 && o.every((x,k)=>x===k)); it.cur = o; }
+  if(q.ty==="match") it.rights = shuffle(q.o.map(p=>p[1])), it.pick = q.o.map(()=> "");
+  return it;
+}
+function startQuiz(opts){
+  const ids = pickQuestions(opts);
+  if(!ids.length){ toast("Questions for this one are coming in the next update."); return; }
+  const exam = opts.mode==="exam";
+  Q = {mode:opts.mode, title:opts.title||"Quiz", s:opts.s||null, topics:opts.topics||null, items:ids.map(prepItem), i:0, results:[], chosen:[], answered:false, t0:Date.now(), qStart:Date.now(), exam, xp:0};
+  if(exam){ Q.deadline = Date.now() + opts.min*60000; Q.min = opts.min; }
+  go("quiz");
+  if(exam){ qTimer = setInterval(()=>{ const left=Math.max(0,Q.deadline-Date.now()); const el=$("#qTimer"); if(el) el.textContent = fmtClock(left); if(left<=0){ stopQuizTimer(); Q.i = Q.items.length; toast("Time's up! Let's see how you did."); render(); } }, 500); }
+}
+const fmtClock = ms => { const s=Math.ceil(ms/1000); return Math.floor(s/60)+":"+pad(s%60); };
+function norm(x){ return String(x).toLowerCase().replace(/\s+/g,"").replace(/[“”"']/g,""); }
+/* returns [ok, chosenText] */
+function checkItem(q, it, val){
+  if(q.ty==="mc"){ const k = it.ord[val]; return [k===q.a, q.o[k]]; }
+  if(q.ty==="tf") return [val===q.a, val?"True":"False"];
+  if(q.ty==="fill") return [q.a.some(a=>norm(a)===norm(val)), val];
+  if(q.ty==="order") return [it.cur.every((x,k)=>x===k), it.cur.map(k=>q.o[k]).join(" → ")];
+  if(q.ty==="match"){ const ok = q.o.every((p,k)=>it.pick[k]===p[1]); return [ok, q.o.map((p,k)=>p[0]+" = "+(it.pick[k]||"?")).join("; ")]; }
+  return [false,""];
+}
+function submitAnswer(val){
+  const it = Q.items[Q.i], q = QB[it.id];
+  if(Q.answered) return;
+  const [ok, chosen] = checkItem(q, it, val);
+  const ms = Date.now()-Q.qStart;
+  Q.results[Q.i] = ok; Q.chosen[Q.i] = chosen; it.val = val;
+  recordAnswer(q, ok, ms, Q.mode, chosen);
+  if(Q.exam){ save(); Q.i++; Q.qStart = Date.now(); render(); window.scrollTo({top:0}); return; }
+  Q.answered = true;
+  if(ok){ Q.xp += XP.correct; addXP(XP.correct, "correct answer"); } else save();
+  render();
+  setTimeout(()=>$(".fb")?.scrollIntoView({behavior:"smooth",block:"nearest"}),50);
+}
+function qBody(q, it, showFb){
+  const sub = `s-${q.s}`;
+  let h = `<div class="qtext">${esc(q.q)}</div>${q.code?`<pre class="qcode">${esc(q.code)}</pre>`:""}`;
+  if(q.ty==="mc"){
+    h += `<div class="opts">${it.ord.map((k,j)=>{ const cls = !showFb ? "" : k===q.a ? "ok" : (it.val===j ? "bad" : ""); return `<button class="opt ${cls}" data-v="${j}" ${showFb?"disabled":""}><span class="L">${"ABCD"[j]}</span><span>${esc(q.o[k])}</span></button>`; }).join("")}</div>`;
+  } else if(q.ty==="tf"){
+    h += `<div class="grid2">${[true,false].map(b=>{ const cls = !showFb ? "" : b===q.a ? "ok" : (it.val===b ? "bad" : ""); return `<button class="opt ${cls}" data-tf="${b}" ${showFb?"disabled":""} style="grid-template-columns:1fr;text-align:center;font-weight:700">${b?"True":"False"}</button>`; }).join("")}</div>`;
+  } else if(q.ty==="fill"){
+    h += `<div class="row" style="flex-wrap:nowrap"><input class="field mono" id="fillIn" autocomplete="off" autocapitalize="off" placeholder="Type your answer" value="${esc(it.val||"")}" ${showFb?"disabled":""}>${showFb?"":`<button class="btn sub" id="fillGo">${Q.exam?"Next":"Check"}</button>`}</div>`;
+  } else if(q.ty==="order"){
+    h += `<p class="muted" style="margin:0;font-size:14px">Use the arrows to put them in order (top = first).</p><div class="ordlist">${it.cur.map((k,j)=>`<div class="orditem ${showFb?(k===j?"ok":"bad"):""}"><span class="n">${j+1}</span><span>${esc(q.o[k])}</span>${showFb?"":`<span class="mv"><button data-up="${j}" aria-label="Move up" ${j===0?"disabled":""}>↑</button><button data-dn="${j}" aria-label="Move down" ${j===it.cur.length-1?"disabled":""}>↓</button></span>`}</div>`).join("")}</div>
+    ${showFb?"":`<button class="btn sub block" id="ordGo">${Q.exam?"Save and next":"Check my order"}</button>`}`;
+  } else if(q.ty==="match"){
+    h += `<div class="matchgrid">${q.o.map((p,k)=>`<div class="matchrow ${showFb?(it.pick[k]===p[1]?"ok":"bad"):""}"><span class="l">${esc(p[0])}</span><select class="field" data-m="${k}" ${showFb?"disabled":""} aria-label="Match for ${esc(p[0])}"><option value="">Choose…</option>${it.rights.map(r=>`<option ${it.pick[k]===r?"selected":""}>${esc(r)}</option>`).join("")}</select></div>`).join("")}</div>
+    ${showFb?"":`<button class="btn sub block" id="matchGo">${Q.exam?"Save and next":"Check my matches"}</button>`}`;
+  }
+  return `<div class="${sub}" style="display:flex;flex-direction:column;gap:12px">${h}</div>`;
+}
+function bindQ(v, q, it){
+  v.querySelectorAll("[data-v]").forEach(b=>b.onclick=()=>submitAnswer(+b.dataset.v));
+  v.querySelectorAll("[data-tf]").forEach(b=>b.onclick=()=>submitAnswer(b.dataset.tf==="true"));
+  const fi=$("#fillIn"); if(fi && !Q.answered){ fi.focus({preventScroll:true}); fi.onkeydown=e=>{ if(e.key==="Enter"){ e.preventDefault(); $("#fillGo").click(); } }; $("#fillGo").onclick=()=>{ const x=fi.value.trim(); if(!x){ toast("Type an answer first."); return; } submitAnswer(x); }; }
+  v.querySelectorAll("[data-up]").forEach(b=>b.onclick=()=>{ const j=+b.dataset.up; [it.cur[j-1],it.cur[j]]=[it.cur[j],it.cur[j-1]]; render(); });
+  v.querySelectorAll("[data-dn]").forEach(b=>b.onclick=()=>{ const j=+b.dataset.dn; [it.cur[j+1],it.cur[j]]=[it.cur[j],it.cur[j+1]]; render(); });
+  if($("#ordGo")) $("#ordGo").onclick=()=>submitAnswer(it.cur.slice());
+  v.querySelectorAll("[data-m]").forEach(s=>s.onchange=()=>{ it.pick[+s.dataset.m]=s.value; });
+  if($("#matchGo")) $("#matchGo").onclick=()=>{ if(it.pick.some(x=>!x)){ toast("Match every item first."); return; } submitAnswer(it.pick.slice()); };
+}
+function viewQuiz(v){
+  if(!Q) return go("practice");
+  if(Q.i >= Q.items.length) return quizDone(v);
+  const it = Q.items[Q.i], q = QB[it.id];
+  const prog = Q.items.map((_,k)=>`<i class="${k<Q.i?(Q.exam?"now":Q.results[k]?"ok":"bad"):k===Q.i?"now":""}"></i>`).join("");
+  let fb = "";
+  if(Q.answered){
+    const right = Q.results[Q.i];
+    fb = right
+      ? `<div class="fb ok"><h4>Correct! +${XP.correct} XP</h4><div><span class="lbl">Why it's right</span><div>${esc(q.why)}</div></div></div>`
+      : `<div class="fb bad"><h4>Not quite, but this is how you learn.</h4>
+          <div><span class="lbl">The answer</span><div><b>${esc(answerText(q))}</b></div></div>
+          ${q.trap?`<div class="fixbox"><span class="lbl">The likely mistake and the fix</span><div>${esc(q.trap)}</div></div>`:""}
+          <div><span class="lbl">Why</span><div>${esc(q.why)}</div></div>
+          <a class="btn line sm" style="align-self:flex-start" href="${esc(coachLink({t:q.t, mistakes:[S.mistakes[0]], m:"review"}))}" target="_blank" rel="noopener">Still confused? Ask Coach ↗</a></div>`;
+  }
+  v.innerHTML = `
+  <div class="qtop"><button class="back" id="bk">← Quit</button>${Q.exam?`<span class="timerpill" id="qTimer">${fmtClock(Q.deadline-Date.now())}</span>`:`<span class="eyebrow">${esc(Q.title)}</span>`}</div>
+  <div class="card qcard s-${q.s}">
+    <div class="qtop"><div class="qprog">${prog}</div><span class="eyebrow" style="margin-left:8px">${Q.i+1}/${Q.items.length}</span></div>
+    <div class="row between"><span class="eyebrow" style="color:var(--sub)">${esc(SUBJ[q.s].code)} · ${esc(TOPIC[q.t].name)}</span><span class="eyebrow">${{e:"Easy",m:"Medium",h:"Hard"}[q.d]||""}</span></div>
+    ${qBody(q, it, Q.answered)}
+    ${fb}
+    ${Q.answered?`<button class="btn block" id="qNext">${Q.i+1<Q.items.length?"Next question":"See my results"}</button>`:""}
+  </div>`;
+  $("#bk").onclick = ()=>{ if(Q.exam && !confirmQuit()) return; Q=null; go("practice"); };
+  bindQ(v, q, it);
+  if($("#qNext")) $("#qNext").onclick = ()=>{ Q.i++; Q.answered=false; Q.qStart=Date.now(); render(); window.scrollTo({top:0,behavior:"smooth"}); };
+}
+let quitArmed = 0;
+function confirmQuit(){ if(Date.now()-quitArmed < 4000) return true; quitArmed = Date.now(); toast("Tap Quit again to end the exam."); return false; }
+function quizDone(v){
+  stopQuizTimer();
+  const total = Q.items.length, right = Q.results.filter(Boolean).length, pct = Math.round(right/total*100);
+  if(!Q.finished){
+    Q.finished = true;
+    const ms = Date.now()-Q.t0;
+    S.quizLog.push({at:new Date().toISOString(), mode:Q.mode, title:Q.title, s:Q.s, score:right, total, ms, ids:Q.items.map(x=>x.id), res:Q.results.map(x=>x?1:0)});
+    if(S.quizLog.length>500) S.quizLog.splice(0, S.quizLog.length-500);
+    if(Q.exam){ Q.items.forEach((it,k)=>{ if(Q.results[k]===undefined){ const q=QB[it.id]; Q.results[k]=false; Q.chosen[k]="(no answer)"; recordAnswer(q,false,0,"exam","(no answer)"); } }); }
+    if(Q.mode==="daily"){ S.daily = today(); S.n.daily++; addXP(XP.daily, "daily challenge"); }
+    else {
+      S.n.quiz++; if(pct===100) S.n.perfect++;
+      const per = {};
+      Q.items.forEach((it,k)=>{ const t=QB[it.id].t; (per[t] ||= [0,0]); per[t][1]++; if(Q.results[k]) per[t][0]++; });
+      for(const [tid,[r,n]] of Object.entries(per)){ const st=topicStat(tid); if(Q.mode==="topic"||Q.mode==="weak"||n>=3){ st.quiz++; st.best=Math.max(st.best, Math.round(r/n*100)); } }
+      const bonus = (Q.exam ? right*XP.correct : 0) + XP.quiz + (pct===100?XP.perfect:0);
+      addXP(bonus, pct===100?"perfect quiz bonus!":Q.exam?"exam simulation marked":"quiz complete");
+    }
+  }
+  const wrong = Q.items.map((it,k)=>({q:QB[it.id],k})).filter(x=>!Q.results[x.k]);
+  const msg = pct===100?"Bug-free! Every answer right.":pct>=80?"Strong work. You're close to mastering this.":pct>=50?"Good effort. Let's fix the ones you missed.":"This needs more practice, and that's fine. Every mistake here is one you won't make in the exam.";
+  const missed = wrong.map(({q,k})=>({t:q.t, q:q.q, chosen:Q.chosen[k], correct:answerText(q)}));
+  v.innerHTML = `
+  <div class="hero"><div class="circuit"></div><span class="eyebrow">${esc(Q.title)}${Q.exam?" · marked":""}</span>
+    <div class="big">${right}/${total}</div><h2 style="font-size:20px">${msg}</h2>${Q.exam?`<p style="margin:0">That's ${pct}%. The pass mark is 50%.</p>`:""}</div>
+  ${wrong.length?`<div class="card"><span class="eyebrow">What you missed</span><div class="view" style="gap:12px;margin-top:8px">${wrong.map(({q,k})=>`<div class="mistake"><b>${esc(q.q)}</b>${q.code?`<pre class="qcode">${esc(q.code)}</pre>`:""}<span>You said: ${esc(Q.chosen[k])}</span><span>Answer: <b>${esc(answerText(q))}</b></span>${q.trap?`<span class="muted">${esc(q.trap)}</span>`:""}</div>`).join("")}</div>
+   <a class="btn gold block" style="margin-top:12px" href="${esc(coachLink({mistakes:missed, m:"review", s:Q.s||wrong[0].q.s}))}" target="_blank" rel="noopener">Review my mistakes with Coach ↗</a>
+   <p class="muted" style="margin:8px 0 0;font-size:13px">Missed questions come back in <b>Fix My Weak Spots</b> until you get them right twice.</p></div>`:""}
+  <div class="grid2">
+    ${Q.mode==="daily"?"":`<button class="btn" id="qAgain">Another round</button>`}
+    <button class="btn ghost" id="qHome">Back to home</button>
+  </div>`;
+  const last = Q;
+  if($("#qAgain")) $("#qAgain").onclick = ()=>startQuiz({mode:last.mode, topics:last.topics, s:last.s, n:last.items.length, title:last.title, min:last.min});
+  $("#qHome").onclick = ()=>{ Q=null; go("home"); };
+}
+
+/* =================== PRACTICE =================== */
+function viewPractice(v){
+  if(COACH_MODE) return viewCoachPractice(v);
+  const s = SUBJ[S.subj] || SUBJECTS[0];
+  const due = dueReviews().length, dueS = dueReviews(s.id).length;
+  const nS = BANK.filter(q=>q.s===s.id).length;
+  const mode = (ic, t, d, id, extra="") => `<button class="mode" id="${id}"><span class="mi">${ic}</span><span><b>${t}</b><span class="d">${d}</span></span><span class="go">${extra||"›"}</span></button>`;
+  v.innerHTML = `
+  <div><h2 style="font-size:26px">Practice</h2><p class="muted" style="margin:4px 0 0">Every wrong answer explains the likely mistake. Missed questions come back until you get them right twice.</p></div>
+  <div class="modelist">
+    ${mode("☀️","Daily challenge",S.daily===today()?"Done for today. Back tomorrow.":`One question, +${XP.daily} XP bonus`,"pDaily")}
+    ${mode("🎯","Fix My Weak Spots",due?`${due} question${due===1?"":"s"} due for review, plus your weakest topics`:"Built from your lowest topics and past mistakes","pFix", due?`<span class="score">${due}</span>`:"")}
+  </div>
+  <div class="sec-h"><h3>By subject</h3></div>
+  ${subjPicker(s.id)}
+  <div class="modelist s-${s.id}">
+    ${mode("📚","Practice by topic",`Pick any of the ${topicsOf(s.id).length} ${s.code} topics`,"pTopic")}
+    ${mode("🔀","Mixed revision",`10 questions across ${s.name}${dueS?`, including ${dueS} due for review`:""}`,"pMixed")}
+    ${mode("⏱️","Exam simulation",`${esc(s.sim.label)} ${Math.min(s.sim.n,nS)} questions, ${Math.max(5,Math.round(s.sim.min*Math.min(s.sim.n,nS)/s.sim.n))} minutes.`,"pExam")}
+    <a class="mode" href="${esc(coachLink({s:s.id, m:"struct"}))}" target="_blank" rel="noopener"><span class="mi">✍️</span><span><b>Structured questions</b><span class="d">Type a long answer and the Coach marks it: +${XP.structuredBase} XP plus ${XP.perMark} per mark</span></span><span class="go">↗</span></a>
+  </div>
+  <div class="sec-h" id="gamesH"><h3>Speed games</h3><span class="muted" style="font-size:13px">45 seconds · streaks of 3 earn bonus points · ${XP.perPoint} XP per point</span></div>
+  <div class="modelist">${Object.entries(GAMES).map(([k,g])=>`<button class="mode s-${g.s}" data-game="${k}"><span class="mi" style="background:var(--sub-soft)">⚡</span><span><b>${esc(g.n)}</b><span class="d">${esc(SUBJ[g.s].code)} · ${esc(g.d)}</span></span><span class="score">Best ${S.games[k]||0}</span></button>`).join("")}</div>`;
+  bindSubjPicker(v);
+  $("#pDaily").onclick = ()=>{ if(S.daily===today()){ toast("Today's challenge is done. Come back tomorrow!"); return; } startQuiz({mode:"daily", ids:[pickDaily().id], title:"Daily challenge"}); };
+  $("#pFix").onclick = ()=>startQuiz({mode:"fix", n:8, title:"Fix My Weak Spots"});
+  $("#pTopic").onclick = ()=>go("topics");
+  $("#pMixed").onclick = ()=>startQuiz({mode:"mixed", s:s.id, n:10, title:`${s.name} mixed revision`});
+  $("#pExam").onclick = ()=>{ const n=Math.min(s.sim.n,nS), min=Math.max(5,Math.round(s.sim.min*n/s.sim.n));
+    modal(`<span class="eyebrow">${s.code} · exam simulation</span><h2>${n} questions, ${min} minutes</h2><p class="muted" style="margin:0">No answers are shown until the end, just like the real thing. Unanswered questions count as wrong.</p><button class="btn gold block" id="exGo">Start the clock</button><button class="btn line block" id="exNo">Not now</button>`, (r,close)=>{ $("#exNo").onclick=close; $("#exGo").onclick=()=>{ close(); startQuiz({mode:"exam", s:s.id, n, min, title:`${s.code} exam simulation`}); }; }); };
+  v.querySelectorAll("[data-game]").forEach(b=>b.onclick=()=>{ G={key:b.dataset.game, state:"intro"}; go("game"); });
+  if(sub==="games") setTimeout(()=>$("#gamesH")?.scrollIntoView({behavior:"smooth"}),50);
+}
+
+/* =================== SPEED GAMES =================== */
+let G = null, gTimer = null;
+function stopGame(){ if(gTimer){ clearInterval(gTimer); gTimer=null; } }
+function gameOptions(c){
+  if(c.opts) return shuffle(c.opts);
+  const others = shuffle([...new Set(c.pool)].filter(x=>x!==c.a)).slice(0,3);
+  return shuffle([c.a, ...others]);
+}
+function viewGame(v){
+  if(!G) return go("practice", "games");
+  const g = GAMES[G.key], sc = `s-${g.s}`;
+  if(G.state==="intro"){
+    v.innerHTML = `<button class="back" id="bk">← Practice</button>
+    <div class="hero subj ${sc}"><div class="circuit"></div><span class="eyebrow">${SUBJ[g.s].code} · speed game · 45 seconds</span><h2>${esc(g.n)}</h2>
+    <p style="margin:0">${esc(g.d)} Get 3 in a row for bonus points.</p>
+    <div class="stats"><div class="stat"><b>${S.games[G.key]||0}</b><span>your best</span></div><div class="stat"><b>45s</b><span>time</span></div><div class="stat"><b>${XP.perPoint}</b><span>XP per point</span></div></div></div>
+    <button class="btn gold block" id="gStart">Start</button>
+    ${G.key==="layer"?`<div class="card"><span class="eyebrow">Memory aid</span><p style="margin:6px 0 0">Layers 1 → 7: <b>P</b>lease <b>D</b>o <b>N</b>ot <b>T</b>hrow <b>S</b>ausage <b>P</b>izza <b>A</b>way (Physical, Data Link, Network, Transport, Session, Presentation, Application).</p></div>`:""}`;
+    $("#bk").onclick=()=>{ G=null; go("practice","games"); }; $("#gStart").onclick=startGame; return;
+  }
+  if(G.state==="over"){
+    v.innerHTML = `<div class="hero subj ${sc}"><div class="circuit"></div><span class="eyebrow">Time's up · ${esc(g.n)}</span><div class="big">${G.score}</div><h2>${G.newBest?"New personal best!":`Best: ${S.games[G.key]||0}`}</h2><p style="margin:0">${G.right} right, ${G.wrong.length} wrong.</p></div>
+    ${G.wrong.length?`<div class="card"><span class="eyebrow">Fix these</span><div class="view" style="gap:10px;margin-top:8px">${G.wrong.slice(0,8).map(w=>`<div class="mistake">${w.code?`<pre class="qcode">${esc(w.code)}</pre>`:`<b>${esc(w.p)}</b>`}<span>Answer: <b>${esc(w.a.replace("\n"," – "))}</b></span></div>`).join("")}</div></div>`:""}
+    <div class="grid2"><button class="btn gold" id="gAgain">Play again</button><button class="btn ghost" id="gBack">Done</button></div>`;
+    $("#gAgain").onclick=startGame; $("#gBack").onclick=()=>{G=null;go("practice","games");}; return;
+  }
+  const c = G.cur;
+  v.innerHTML = `
+  <div class="row between"><span class="big" style="font-size:34px">${G.score}</span><span class="eyebrow">${G.combo>=3?`🔥 Streak x${G.combo}`:esc(g.n)}</span></div>
+  <div class="timer"><i id="gBar" style="width:${G.left/45*100}%"></i></div>
+  <div class="gcard ${G.flash||""} ${sc}" id="gCard">${c.code?`<span class="muted">What does it print?</span><pre>${esc(c.code)}</pre>`:`<div class="tx">${esc(c.p)}</div>`}</div>
+  <div class="gopts ${sc}">${G.opts.map((o,k)=>`<button class="btn" data-g="${k}">${esc(o)}</button>`).join("")}</div>`;
+  v.querySelectorAll("[data-g]").forEach(b=>b.onclick=()=>answerGame(G.opts[+b.dataset.g]));
+}
+function nextCard(){ G.cur = G.deck[G.i % G.deck.length]; G.opts = gameOptions(G.cur); }
+function startGame(){
+  stopGame();
+  G = {key:G.key, state:"play", deck:shuffle(GAMES[G.key].deck()), i:0, score:0, right:0, combo:0, wrong:[], left:45, flash:""};
+  nextCard(); render();
+  const t0 = Date.now();
+  gTimer = setInterval(()=>{ G.left = Math.max(0, 45 - (Date.now()-t0)/1000); const b=$("#gBar"); if(b) b.style.width=(G.left/45*100)+"%"; if(G.left<=0) endGame(); }, 200);
+}
+function answerGame(choice){
+  if(G.state!=="play") return;
+  const c = G.cur;
+  if(choice===c.a){ G.combo++; G.right++; G.score += 1 + (G.combo>=3?1:0); G.flash="flashok"; }
+  else { G.combo=0; G.wrong.push(c); G.flash="flashbad"; }
+  G.i++; nextCard(); render(); setTimeout(()=>{ G.flash=""; const gc=$("#gCard"); if(gc) gc.classList.remove("flashok","flashbad"); }, 300);
+}
+function endGame(){
+  stopGame(); G.state="over";
+  G.newBest = G.score > (S.games[G.key]||0); if(G.newBest) S.games[G.key] = G.score;
+  S.log.push({at:new Date().toISOString(), q:"game:"+G.key, t:GAMES[G.key].s, ok:G.right, m:"game", ms:45000, c:`score ${G.score}, wrong ${G.wrong.length}`});
+  if(G.score>0) addXP(G.score*XP.perPoint, GAMES[G.key].n); else { checkBadges(); save(); }
+  render();
+}
+
+/* =================== PROGRESS (ME) =================== */
+function viewMe(v){
+  const L = levelOf(S.xp), lo=levelFloor(L), hi=levelFloor(L+1);
+  const week = [...Array(7)].map((_,k)=>{ const d=new Date(); d.setDate(d.getDate()-(6-k)); const s=dstr(d); return {s, x:S.days[s]||0, l:"SMTWTFS"[d.getDay()]}; });
+  const mx = Math.max(DAILY_GOAL, ...week.map(w=>w.x));
+  const answers = S.log.filter(x=>!String(x.q).startsWith("game:"));
+  const acc = answers.length ? Math.round(answers.filter(x=>x.ok).length/answers.length*100) : 0;
+  const totalTime = Object.values(S.topics).reduce((a,t)=>a+(t.time||0),0);
+  const s = SUBJ[S.subj] || SUBJECTS[0];
+  const tileCls = st => ({m:"g", g:"a", l:"r", n:""})[st];
+  v.innerHTML = `
+  <div class="hero"><div class="circuit"></div><span class="eyebrow">Level ${L}</span><h2>${esc(S.name)}, ${esc(levelName(L))}</h2>
+    <div><div class="bar" style="background:rgba(255,255,255,.22)"><i style="width:${Math.round((S.xp-lo)/(hi-lo)*100)}%;background:#FFC94A"></i></div><span style="font-size:13px;opacity:.88">${hi-S.xp} XP to ${esc(levelName(L+1))}</span></div>
+    <div class="stats"><div class="stat"><b>${S.xp.toLocaleString()}</b><span>total XP</span></div><div class="stat"><b>${S.best}</b><span>best streak</span></div><div class="stat"><b>${S.n.quiz+S.n.daily}</b><span>quizzes</span></div></div></div>
+  <div class="card"><span class="eyebrow">This week</span>
+    <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:6px;align-items:end;height:110px;margin-top:10px">
+    ${week.map(w=>`<div style="display:flex;flex-direction:column;align-items:center;gap:4px;height:100%;justify-content:flex-end"><span style="font-size:11px;font-variant-numeric:tabular-nums" class="muted">${w.x||""}</span><div style="width:100%;max-width:28px;border-radius:6px 6px 2px 2px;height:${Math.max(4,Math.round(w.x/mx*70))}px;background:${w.x>=DAILY_GOAL?"var(--ok)":w.x?"var(--gold)":"var(--line)"}"></div><b style="font-size:12px">${w.l}</b></div>`).join("")}
+    </div></div>
+  <div class="card"><span class="eyebrow">Stats</span><div class="stats" style="margin-top:8px;grid-template-columns:repeat(3,1fr)">${[["Questions answered",answers.length],["Correct",acc+"%"],["Time studied",fmtTime(totalTime)],["Topics mastered",masteredCount()+"/"+TOPICS.length],["Due for review",dueReviews().length],["Coach questions",S.n.tutor]].map(([a,b])=>`<div class="stat" style="background:var(--bg)"><b>${b}</b><span>${a}</span></div>`).join("")}</div></div>
+
+  <div class="card"><span class="eyebrow">Topic map</span>
+    <div style="margin:10px 0">${subjPicker(s.id)}</div>
+    <div class="legend"><span><i style="background:var(--ok)"></i>Mastered (80%+)</span><span><i style="background:var(--gold)"></i>Getting there</span><span><i style="background:var(--red)"></i>Learning</span><span><i style="background:var(--line)"></i>Not started</span></div>
+    <div class="map" style="margin-top:10px">${topicsOf(s.id).map((t,k)=>{ const st=masteryState(t.id), p=masteryPct(t.id); return `<button class="tile ${tileCls(st)}" data-topic="${t.id}"><span>${s.code} · ${k+1}</span><b>${esc(t.name)}</b><span>${MLABEL[st]}${p!==null?" · "+p+"%":""}</span></button>`; }).join("")}</div>
+    <div class="tblwrap" style="margin-top:12px"><table class="stt"><thead><tr><th>Topic</th><th>Done</th><th>Right</th><th>Best</th><th>Time</th><th>Last</th></tr></thead><tbody>
+    ${topicsOf(s.id).map((t,k)=>{ const st=S.topics[t.id]||{}; return `<tr><td>${k+1}. ${esc(t.name)}</td><td>${st.att||0}</td><td>${st.att?Math.round(st.ok/st.att*100)+"%":"–"}</td><td>${st.quiz?st.best+"%":"–"}</td><td>${st.time?fmtTime(st.time):"–"}</td><td>${fmtDate(st.last)}</td></tr>`; }).join("")}
+    </tbody></table></div></div>
+
+  <div class="card"><span class="eyebrow">My mistakes</span>
+    ${S.mistakes.length?`<div class="view" style="gap:12px;margin-top:8px">${S.mistakes.slice(0,10).map(m=>`<div class="mistake"><span class="eyebrow">${esc(SUBJ[TOPIC[m.t]?.s]?.code||"")} · ${esc(TOPIC[m.t]?.name||"")}</span><b>${esc(m.q)}</b><span>You said: ${esc(m.chosen)} · Correct: ${esc(m.correct)}</span>${m.fix?`<span class="muted">${esc(m.fix)}</span>`:""}</div>`).join("")}</div>
+      <a class="btn gold block" style="margin-top:12px" href="${esc(coachLink({mistakes:S.mistakes, m:"review"}))}" target="_blank" rel="noopener">Review my mistakes with Coach ↗</a>`
+    :`<p class="muted" style="margin:6px 0 0">Questions you get wrong are saved here so you can fix them later.</p>`}</div>
+
+  <div class="card"><span class="eyebrow">Settings</span>
+    <div class="view" style="gap:12px;margin-top:8px">
+      <div><label class="lab" for="rn">Name</label><div class="row" style="flex-wrap:nowrap"><input class="field" id="rn" value="${esc(S.name)}" maxlength="30"><button class="btn sm" id="rnSave">Save</button></div></div>
+      <div><span class="lab">Appearance</span><div class="seg">${[["auto","Auto"],["light","Light"],["dark","Dark"]].map(([k,l])=>`<button class="${(S.look||"auto")===k?"on":""}" data-look="${k}">${l}</button>`).join("")}</div></div>
+      <div><span class="lab">Cloud backup</span>
+        ${S.cloud?.code?`<p style="margin:0 0 6px;font-size:14px">Your progress backs up automatically. On a new phone, choose <b>Restore</b> on the welcome screen and enter this code:</p>
+        <div class="row" style="flex-wrap:nowrap"><input class="field mono" readonly value="${fmtCode(S.cloud.code)}" id="ccode"><button class="btn sm" id="ccopy">Copy</button></div>
+        <p class="muted" style="margin:6px 0 0;font-size:13px" id="cstat">${syncErr?"Last backup didn't go through (no internet?). It will retry.":lastSync?"Backed up at "+lastSync.toLocaleTimeString([], {hour:"numeric",minute:"2-digit"})+".":"Backs up a few seconds after you study."}</p>
+        <button class="btn line sm" id="cnow" style="margin-top:8px">Back up now</button>`
+        :`<p class="muted" style="margin:0;font-size:14px">Cloud backup starts when you use the app online at utt.tidyassistant.com.</p>`}
+      </div>
+    </div></div>`;
+  bindSubjPicker(v); bindTopicRows(v);
+  $("#rnSave").onclick=()=>{ const n=$("#rn").value.trim(); if(n){ S.name=n; save(); toast("Name saved"); render(); } };
+  v.querySelectorAll("[data-look]").forEach(b=>b.onclick=()=>{ S.look=b.dataset.look; save(); applyTheme(); render(); });
+  if($("#ccopy")) $("#ccopy").onclick=async()=>{ try{ await navigator.clipboard.writeText(fmtCode(S.cloud.code)); toast("Backup code copied"); }catch(e){ $("#ccode").select(); } };
+  if($("#cnow")) $("#cnow").onclick=async()=>{ dirty=true; await syncNow(); render(); toast(syncErr?"Couldn't reach the backup. Try again with internet.":"Backed up ✓"); };
+}
+
+/* =================== COACH DOOR (main app) =================== */
+function viewCoachDoor(v){
+  const t = S.lastTopic && TOPIC[S.lastTopic];
+  v.innerHTML = `<div class="hero"><div class="circuit"></div><span class="eyebrow">Needs internet</span><h2>Ask Coach</h2>
+    <p style="margin:0">Coach opens in Claude. Ask anything, get a lesson with diagrams, work through a problem together step by step, or send a photo of your working for feedback.</p>
+    <a class="btn gold" href="${esc(coachLink({t:t?.id}))}" target="_blank" rel="noopener">Open Coach${t?": "+esc(t.name):""} ↗</a></div>
+  <div class="integrity"><span style="font-size:20px">🎓</span><div><b>Coach teaches, it doesn't do graded work.</b> UTT's rule for all three courses is "AI use barely permitted". If you paste an assignment, lab, project or quiz question, Coach will explain the idea and work a <i>different</i> example with you, so the work you hand in is all yours.</div></div>
+  <div class="grid2">
+    <a class="btn ghost" href="${esc(coachLink({t:t?.id, m:"work"}))}" target="_blank" rel="noopener">Work it with me ↗</a>
+    <a class="btn ghost" href="${esc(coachLink({mistakes:S.mistakes, m:"review"}))}" target="_blank" rel="noopener" ${S.mistakes.length?"":"aria-disabled=\"true\""}>Review my mistakes ↗</a>
+  </div>
+  <div class="card"><span class="eyebrow">Your points come back here</span><p style="margin:6px 0 0">When you finish with Coach, tap <b>Add XP to app</b> at the top of the Coach page. Your XP, streak and badges all stay in this app (up to ${MAX_CLAIM.toLocaleString()} XP per link, and each link works once).</p></div>
+  ${SUBJECTS.map(s=>`<div class="card s-${s.id}"><span class="eyebrow" style="color:var(--sub)">${s.code} · open Coach on a topic</span><div class="chips" style="flex-wrap:wrap;margin-top:8px">${topicsOf(s.id).map(x=>`<a class="chip" href="${esc(coachLink({t:x.id}))}" target="_blank" rel="noopener">${esc(x.name)}</a>`).join("")}</div></div>`).join("")}`;
+}
+
+/* =================== REWARDS =================== */
+function viewRewards(v){
+  const L = levelOf(S.xp);
+  const pr = S.parent.rewards||[];
+  const sec = (k,label)=>`<button class="${(S.shopTab||"theme")===k?"on":""}" data-st="${k}">${label}</button>`;
+  const shopItems = SHOP.filter(x=>x.kind===(S.shopTab||"theme"));
+  const isOn = it => it.kind==="theme"?(S.theme||"th-circuit")===it.id : it.kind==="avatar"?S.avatar===it.id : it.kind==="coach"?S.coachStyle===it.id : false;
+  v.innerHTML = `
+  <div class="hero"><div class="circuit"></div>
+    <div class="coinrow"><div class="coinbig">${S.coins>999?"1k+":"¢"}</div><div><span class="eyebrow">Your coins</span><div class="big" style="font-size:36px">${S.coins.toLocaleString()}</div></div></div>
+    <p style="margin:0;opacity:.92">Every XP you earn adds a coin. Hit your daily goal to open a treasure chest. Badges and level-ups pay bonus coins.</p>
+    <div class="stats"><div class="stat"><b>${S.freezes||0}/2</b><span>streak freezes</span></div><div class="stat"><b>${Math.min(L,EMPIRE.length)}/${EMPIRE.length}</b><span>Tech Empire</span></div><div class="stat"><b>${Object.keys(S.badges).length}/${BADGES.length}</b><span>badges</span></div></div>
+  </div>
+
+  <div class="card"><div class="row between"><span class="eyebrow">Real-life rewards</span><button class="btn line sm" id="parentBtn">Parents 🔒</button></div>
+    ${pr.length?`<div class="view" style="gap:8px;margin-top:10px">${pr.map(r=>{ const now=Math.min(goalNow(r.type), r.target); const done=goalNow(r.type)>=r.target;
+      return `<div class="rreward ${done&&!r.given?"ready":""}"><div class="row between" style="flex-wrap:nowrap"><b>${done?"🏆":"🎯"} ${esc(r.title)}</b>${r.given?`<span class="mastery good">Received</span>`:done?`<span class="mastery mid">Unlocked!</span>`:""}</div>
+      <span class="muted" style="font-size:13px">${esc(GOALS[r.type])} ${r.target}</span><div class="row" style="flex-wrap:nowrap"><div class="bar" style="flex:1"><i style="width:${Math.round(now/r.target*100)}%;background:var(--gold)"></i></div><span class="mono" style="font-size:12px">${now}/${r.target}</span></div>
+      ${done&&!r.given?`<span style="font-size:13px"><b>Real-life reward unlocked — show this to your parent to claim it!</b></span>`:""}</div>`; }).join("")}</div>`
+    :`<p class="muted" style="margin:8px 0 0">A parent can set real prizes for milestones, like "Reach level 5: KFC lunch" or "30-day streak: new headphones". They can set them here with a PIN, or on their own phone and send them to you.</p>`}
+    <button class="btn ghost block" id="sendProg" style="margin-top:10px">Send my progress to my parent</button><div id="progBox" hidden style="margin-top:8px"></div>
+    ${pasteBox("pasteRew","Got a rewards link from your parent? Paste it here")}
+  </div>
+
+  <div class="card"><span class="eyebrow">Shop</span>
+    <div class="seg" style="margin:10px 0">${sec("theme","Themes")}${sec("avatar","Avatars")}${sec("power","Power-ups")}${sec("coach","Coach styles")}</div>
+    <div class="shop">${shopItems.map(it=>{ const owned = it.p===0 || S.owned[it.id]; const on=isOn(it);
+      return `<div class="item ${on?"owned":""}">${it.sw?`<span class="sw" style="background:${it.sw}"></span>`:`<span class="ic">${it.ic}</span>`}<b>${esc(it.n)}</b>${it.d?`<span>${esc(it.d)}</span>`:""}
+      ${it.kind==="power"?`<span class="price"><span class="coinico">c</span>${it.p} · you have ${S.freezes||0}/2</span><button class="btn sm gold" data-buy="${it.id}" ${(S.freezes||0)>=2||S.coins<it.p?"disabled":""}>Buy</button>`
+       : on?`<button class="btn sm ghost" ${it.kind==="coach"?`data-off="${it.id}"`:"disabled"}>${it.kind==="coach"?"On · turn off":"Equipped"}</button>`
+       : owned?`<button class="btn sm" data-use="${it.id}">Use</button>`
+       :`<span class="price"><span class="coinico">c</span>${it.p}</span><button class="btn sm gold" data-buy="${it.id}" ${S.coins<it.p?"disabled":""}>Buy</button>`}</div>`; }).join("")}</div>
+  </div>
+
+  <div class="card"><span class="eyebrow">Your Tech Empire</span><p class="muted" style="margin:4px 0 10px;font-size:14px">Each level unlocks a new business, from a phone repair stall to a regional tech giant.</p>
+    <div class="empire">${EMPIRE.map((b,i)=>`<div class="biz ${i<L?"on":"off"}"><span class="ic">${b.ic}</span><b>${i<L?esc(b.n):"Level "+(i+1)}</b><span>${i<L?esc(b.f):"Locked"}</span></div>`).join("")}</div>
+  </div>
+
+  <div class="card"><span class="eyebrow">Badges · ${Object.keys(S.badges).length}/${BADGES.length}</span><div class="badges" style="margin-top:10px">
+    ${BADGES.map(b=>`<div class="badge ${S.badges[b.id]?"got":""}"><div class="medal">${esc(b.m)}</div><b>${esc(b.n)}</b><span>${esc(b.d)}</span></div>`).join("")}</div></div>
+  <div class="card"><span class="eyebrow">Levels</span><div class="view" style="gap:4px;margin-top:8px;font-size:14px">${LEVELS.map((n,k)=>`<div class="row between" style="${k+1===Math.min(L,10)?"font-weight:800;color:var(--brand)":k+1>L?"opacity:.55":""}"><span>${k+1}. ${esc(n)}</span><span class="mono" style="font-size:12px">${levelFloor(k+1).toLocaleString()} XP</span></div>`).join("")}</div></div>
+  <button class="btn line block" id="toMe">My progress, mistakes and settings</button>`;
+  $("#toMe").onclick = ()=>go("me");
+  bindPaste("pasteRew");
+  $("#sendProg").onclick = async ()=>shareLink("UTT Study progress", `My UTT Study progress (level ${levelOf(S.xp)}, ${liveStreak()}-day streak). Open it in the parent view of the app:`, await signed("progress", progressPayload()), "progBox");
+  $("#parentBtn").onclick = ()=>parentGate();
+  v.querySelectorAll("[data-st]").forEach(b=>b.onclick=()=>{ S.shopTab=b.dataset.st; save(); render(); });
+  v.querySelectorAll("[data-buy]").forEach(b=>b.onclick=()=>{ const it=SHOP.find(x=>x.id===b.dataset.buy); if(S.coins<it.p) return;
+    if(it.kind==="power" && (S.freezes||0)>=2) return;
+    S.coins-=it.p; if(it.kind==="power"){ S.freezes=(S.freezes||0)+1; toast("Streak freeze ready 🧊"); } else { S.owned[it.id]=1; useItem(it); toast(`${it.n} unlocked!`, true); confetti(); } save(); render(); });
+  v.querySelectorAll("[data-use]").forEach(b=>b.onclick=()=>{ useItem(SHOP.find(x=>x.id===b.dataset.use)); save(); render(); });
+  v.querySelectorAll("[data-off]").forEach(b=>b.onclick=()=>{ S.coachStyle=null; save(); render(); });
+}
+function useItem(it){ if(it.kind==="theme"){ S.theme=it.id; applyTheme(); } else if(it.kind==="avatar") S.avatar=it.id; else if(it.kind==="coach") S.coachStyle=it.id; renderHeader(); }
+
+/* ---- parent area (on Suri's phone, PIN protected; the PIN is stored only as a SHA-256 hash) ---- */
+let parentOK = false;
+function parentGate(){
+  if(parentOK) return go("parent");
+  const setting = !S.parent.pin; let entry="", first=null;
+  const draw = (msg)=>{
+    $("#modalRoot .box").innerHTML = `<span class="eyebrow">Parents only</span><h2>${setting?(first===null?"Create a 4-digit PIN":"Enter the PIN again"):"Enter your PIN"}</h2>
+      <p class="muted" style="margin:0;font-size:14px">${msg||(setting?"Suri won't be able to change rewards without it.":"")}</p>
+      <div class="pindots">${[0,1,2,3].map(i=>`<i class="${i<entry.length?"on":""}"></i>`).join("")}</div>
+      <div class="pinpad">${[1,2,3,4,5,6,7,8,9].map(n=>`<button data-k="${n}">${n}</button>`).join("")}<button data-k="x" aria-label="Cancel">✕</button><button data-k="0">0</button><button data-k="b" aria-label="Delete">⌫</button></div>`;
+    $("#modalRoot .box").querySelectorAll("[data-k]").forEach(b=>b.onclick=()=>press(b.dataset.k));
+  };
+  const press = async k => {
+    if(k==="x"){ $("#modalRoot").innerHTML=""; return; }
+    if(k==="b"){ entry=entry.slice(0,-1); return draw(); }
+    if(entry.length<4) entry+=k;
+    if(entry.length<4) return draw();
+    const h = await sha("utt-parent:"+entry);
+    if(setting){
+      if(first===null){ first=entry; entry=""; return draw(); }
+      if(first!==entry){ first=null; entry=""; return draw("The PINs didn't match. Try again."); }
+      S.parent.pin = h; save(); parentOK=true; $("#modalRoot").innerHTML=""; return go("parent");
+    }
+    if(h===S.parent.pin){ parentOK=true; $("#modalRoot").innerHTML=""; return go("parent"); }
+    entry=""; draw("That PIN isn't right.");
+  };
+  modal("", ()=>draw());
+}
+function goalSelect(id){ return `<select class="field" id="${id}">${Object.entries(GOALS).map(([k,l])=>`<option value="${k}">${esc(l.replace(/ of$|:$/,""))}</option>`).join("")}</select>`; }
+function viewParent(v){
+  if(!parentOK) return go("rewards");
+  const pr = S.parent.rewards ||= [];
+  v.innerHTML = `<button class="back" id="bk">← Rewards</button>
+  <div><h2 style="font-size:24px">Real-life rewards</h2><p class="muted" style="margin:4px 0 0">Set prizes ${esc(S.name)} unlocks by studying. ${esc(S.name)} sees a progress bar for each, and the app celebrates when one is reached.</p></div>
+  <div class="card"><form id="rf" class="view" style="gap:10px">
+    <div><label class="lab" for="rt">Reward</label><input class="field" id="rt" maxlength="60" placeholder="e.g. KFC lunch" required></div>
+    <div class="grid2"><div><label class="lab" for="rty">Milestone</label>${goalSelect("rty")}</div>
+    <div><label class="lab" for="rn2">Target</label><input class="field" id="rn2" type="number" min="1" max="100000" value="5" required></div></div>
+    <p class="muted" style="margin:0;font-size:13px" id="rnow"></p>
+    <button class="btn gold" type="submit">Add reward</button></form></div>
+  <div class="card"><span class="eyebrow">Current rewards</span>${pr.length?`<div class="view" style="gap:8px;margin-top:8px">${pr.map((r,i)=>{ const done=goalNow(r.type)>=r.target; return `<div class="rreward ${done&&!r.given?"ready":""}"><b>${esc(r.title)}</b><span class="muted" style="font-size:13px">${esc(GOALS[r.type])} ${r.target} · now ${goalNow(r.type)}${done?" · UNLOCKED":""}</span>
+    <div class="row">${done&&!r.given?`<button class="btn sm" data-given="${i}">Mark as given</button>`:""}${r.given?`<span class="mastery good">Given ${esc(r.given)}</span>`:""}<button class="btn line sm" data-del="${i}">Remove</button></div></div>`; }).join("")}</div>`:`<p class="muted" style="margin:6px 0 0">No rewards yet.</p>`}</div>
+  <div class="card"><span class="eyebrow">Right now</span><p style="margin:6px 0 0;font-size:14px">Level ${levelOf(S.xp)} (${esc(levelName(levelOf(S.xp)))}) · best streak ${S.best} · ${S.xp.toLocaleString()} XP · ${masteredCount()} topics at 80%+ · ${S.n.structured} structured questions marked · ${S.n.daily} daily challenges.</p>
+   <p class="muted" style="margin:8px 0 0;font-size:13px">Ideas: a treat for a 7-day streak, something bigger at level 5, an outing for 10 topics at 80%+.</p></div>
+  <button class="btn line" id="lock">Lock parent area</button>`;
+  const showNow=()=>{ $("#rnow").textContent = `Right now: ${goalNow($("#rty").value)}`; }; $("#rty").onchange=showNow; showNow();
+  $("#bk").onclick=()=>go("rewards"); $("#lock").onclick=()=>{ parentOK=false; go("rewards"); };
+  $("#rf").onsubmit = e=>{ e.preventDefault(); const title=$("#rt").value.trim(), type=$("#rty").value, target=Math.max(1,parseInt($("#rn2").value,10)||1); if(!title) return;
+    pr.push({title,type,target,reached: null, given:null}); checkParentGoals(); save(); toast("Reward added"); render(); };
+  v.querySelectorAll("[data-del]").forEach(b=>b.onclick=()=>{ pr.splice(+b.dataset.del,1); save(); render(); });
+  v.querySelectorAll("[data-given]").forEach(b=>b.onclick=()=>{ pr[+b.dataset.given].given=today(); save(); render(); });
+}
+
+/* =================== PARENT'S OWN PHONE =================== */
+async function shareLink(title, text, url, boxId){
+  if(navigator.share){ try{ await navigator.share({title, text, url}); return; }catch(e){ if(e && e.name==="AbortError") return; } }
+  try{ await navigator.clipboard.writeText(text+"\n"+url); toast("Link copied. Paste it into WhatsApp or a text message."); }catch(e){}
+  const box = boxId && document.getElementById(boxId);
+  if(box){ box.hidden=false; box.innerHTML = `<label class="lab" for="${boxId}-t">Copy this link and send it:</label><textarea class="field mono" id="${boxId}-t" readonly style="min-height:70px">${esc(url)}</textarea>`; const t=document.getElementById(boxId+"-t"); t.focus(); t.select(); }
+}
+const goalLabel = r => `${GOALS[r.type]} ${r.target}`;
+function pasteBox(id, label){ return `<div style="margin-top:12px"><label class="lab" for="${id}">${label}</label><div class="row" style="flex-wrap:nowrap"><input class="field" id="${id}" placeholder="Paste the link here" autocomplete="off"><button class="btn sm" id="${id}-go">Open</button></div></div>`; }
+function bindPaste(id){ const b=document.getElementById(id+"-go"); if(!b) return; b.onclick=()=>{ const v=document.getElementById(id).value.trim(); const i=v.indexOf("#"); if(i<0){ toast("That doesn't look like a UTT Study link."); return; } location.hash = v.slice(i); }; }
+/* Suri's phone: receive rewards set on the parent's phone */
+async function handleRewardsLink(){
+  if(COACH_MODE) return;
+  const d = await readSigned("rewards"); if(!d || !Array.isArray(d.r)) return;
+  if(S.role==="parent"){ toast("That rewards link is for Suri's phone."); return; }
+  const old = S.parent.rewards || [];
+  S.parent.rewards = d.r.map(x=>{ const prev = old.find(o=>o.title===x.title && o.type===x.type && o.target===x.target);
+    return {title:String(x.title).slice(0,60), type:GOALS[x.type]?x.type:"level", target:Math.max(1,+x.target||1), reached: prev?.reached || null, given: x.given || prev?.given || null}; });
+  S.parentLinkAt = d.at || today();
+  save(); if(S.name) go("rewards");
+  queueModal(()=>{ confetti(); modal(`<span class="eyebrow">From your parent</span><h2>Your real-life rewards are set!</h2>
+    <div class="view" style="gap:6px;width:100%;text-align:left">${S.parent.rewards.map(r=>`<div class="rreward"><b>🎯 ${esc(r.title)}</b><span class="muted" style="font-size:13px">${esc(goalLabel(r))}</span></div>`).join("")||"<p>No rewards right now.</p>"}</div>
+    <button class="btn block" id="mClose">Let's go</button>`, (x,close)=>{ $("#mClose").onclick=()=>{ close(); checkParentGoals(); save(); }; }); });
+}
+function progressPayload(){
+  const week = [...Array(7)].map((_,k)=>{ const d=new Date(); d.setDate(d.getDate()-(6-k)); return S.days[dstr(d)]||0; });
+  const ans = S.log.filter(x=>!String(x.q).startsWith("game:"));
+  return {n:S.name, l:levelOf(S.xp), x:S.xp, s:liveStreak(), b:S.best, m:masteredCount(), q:S.n.quiz, d:S.n.daily, st:S.n.structured, bd:Object.keys(S.badges).length, w:week, at:today(),
+    acc: ans.length?Math.round(ans.filter(a=>a.ok).length/ans.length*100):null, na:ans.length,
+    sp:SUBJECTS.map(s=>[s.code, subjPct(s.id)]), weak:weakTopics(3).map(t=>SUBJ[t.s].code+": "+t.name)};
+}
+async function handleProgressLink(){
+  if(COACH_MODE) return;
+  const d = await readSigned("progress"); if(!d) return;
+  if(S.role!=="parent"){ toast("That's a progress link for a parent's phone."); return; }
+  S.kid = d; S.kidName = d.n || S.kidName; save(); go("parenthome"); toast(`${d.n||"Your child"}'s progress updated`, true);
+}
+function viewParentHome(v){
+  const kid = S.kid, kn = S.kidName || "Suri";
+  const pr = S.pRewards ||= [];
+  const kidNow = type => !kid ? null : type==="level"?kid.l:type==="streak"?kid.b:type==="xp"?kid.x:type==="mastered"?kid.m:type==="structured"?kid.st:type==="daily"?kid.d:null;
+  v.innerHTML = `
+  <div class="hero"><div class="circuit"></div><span class="eyebrow">Parent mode</span><h2>${esc(kn)}'s rewards</h2>
+    <p style="margin:0">Set real-life prizes here, then send them to ${esc(kn)}'s phone. Ask ${esc(kn)} to send you a progress link any time to see how it's going.</p></div>
+
+  <div class="card"><span class="eyebrow">Latest progress</span>
+   ${kid?`<p class="muted" style="margin:4px 0 8px;font-size:13px">Sent on ${esc(kid.at)}</p>
+    <div class="stats">
+      ${[["Level",kid.l],["Day streak",kid.s],["Best streak",kid.b],["Total XP",kid.x],["Topics 80%+",kid.m],["Accuracy",kid.acc==null?"–":kid.acc+"%"]].map(([a,b])=>`<div class="stat" style="background:var(--bg)"><b>${esc(String(b))}</b><span>${a}</span></div>`).join("")}
+    </div>
+    ${kid.sp?`<div class="view" style="gap:6px;margin-top:12px">${kid.sp.map(([c,p])=>`<div class="row" style="flex-wrap:nowrap;font-size:13px"><span class="mono" style="width:76px">${esc(c)}</span><div class="bar" style="flex:1"><i style="width:${+p||0}%;background:var(--brand)"></i></div><b class="mono" style="width:40px;text-align:right">${+p||0}%</b></div>`).join("")}</div>`:""}
+    <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:6px;align-items:end;height:70px;margin-top:12px">${(kid.w||[]).map(x=>`<div style="height:${Math.max(4,Math.round(x/Math.max(DAILY_GOAL,...kid.w)*60))}px;border-radius:4px;background:${x>=DAILY_GOAL?"var(--ok)":x?"var(--gold)":"var(--line)"}"></div>`).join("")}</div>
+    <span class="muted" style="font-size:12px">XP over the last 7 days (green = daily goal met)</span>
+    ${kid.weak?.length?`<p style="margin:10px 0 0;font-size:14px"><b>Needs practice:</b> ${esc(kid.weak.join(" · "))}</p>`:""}`
+   :`<p class="muted" style="margin:6px 0 0">Nothing yet. On ${esc(kn)}'s phone: Rewards, then <b>Send my progress to my parent</b>. When you open that link here, the progress shows up.</p>`}
+   ${pasteBox("pasteProg","Got a progress link? Paste it here")}
+  </div>
+
+  <div class="card"><span class="eyebrow">Rewards</span>
+   ${pr.length?`<div class="view" style="gap:8px;margin-top:8px">${pr.map((r,i)=>{ const n=kidNow(r.type); const done = n!==null && n>=r.target;
+     return `<div class="rreward ${done&&!r.given?"ready":""}"><div class="row between" style="flex-wrap:nowrap"><b>${done?"🏆":"🎯"} ${esc(r.title)}</b>${r.given?`<span class="mastery good">Given</span>`:done?`<span class="mastery mid">Earned!</span>`:""}</div>
+      <span class="muted" style="font-size:13px">${esc(goalLabel(r))}${n!==null?` · now ${n}`:""}</span>
+      ${n!==null?`<div class="bar"><i style="width:${Math.min(100,Math.round(n/r.target*100))}%;background:var(--gold)"></i></div>`:""}
+      <div class="row">${done&&!r.given?`<button class="btn sm" data-given="${i}">Mark as given</button>`:""}<button class="btn line sm" data-del="${i}">Remove</button></div></div>`; }).join("")}</div>`
+   :`<p class="muted" style="margin:6px 0 0">No rewards yet. Add one below.</p>`}
+   <form id="prf" class="view" style="gap:10px;margin-top:14px;border-top:1px dashed var(--line);padding-top:14px">
+    <div><label class="lab" for="prt">New reward</label><input class="field" id="prt" maxlength="60" placeholder="e.g. New headphones" required></div>
+    <div class="grid2"><div><label class="lab" for="prty">When ${esc(kn)} reaches</label>${goalSelect("prty")}</div>
+    <div><label class="lab" for="prn">Target</label><input class="field" id="prn" type="number" min="1" max="100000" value="5" required></div></div>
+    <button class="btn line" type="submit">Add reward</button></form>
+  </div>
+  <button class="btn gold block" id="pSend">Send rewards to ${esc(kn)}'s phone</button>
+  <div id="pLinkBox" hidden></div>
+  <div class="card"><span class="eyebrow">Settings</span><div class="view" style="gap:8px;margin-top:8px">
+    <div><label class="lab" for="pkn">Child's name</label><div class="row" style="flex-wrap:nowrap"><input class="field" id="pkn" value="${esc(S.kidName||"Suri")}" maxlength="30"><button class="btn sm" id="pknS">Save</button></div></div>
+    <div id="pSwitch"><button class="btn line sm" id="pStudent">Switch this phone to student mode</button></div></div></div>`;
+  bindPaste("pasteProg");
+  $("#prf").onsubmit = e=>{ e.preventDefault(); const title=$("#prt").value.trim(); if(!title) return; pr.push({title, type:$("#prty").value, target:Math.max(1,parseInt($("#prn").value,10)||1), given:null}); save(); toast("Added. Remember to send it."); render(); };
+  v.querySelectorAll("[data-del]").forEach(b=>b.onclick=()=>{ pr.splice(+b.dataset.del,1); save(); render(); });
+  v.querySelectorAll("[data-given]").forEach(b=>b.onclick=()=>{ pr[+b.dataset.given].given=today(); save(); render(); });
+  $("#pSend").onclick = async ()=>{ if(!pr.length){ toast("Add a reward first."); return; }
+    const url = await signed("rewards", {r:pr.map(r=>({title:r.title,type:r.type,target:r.target,given:r.given})), at:today()});
+    shareLink("UTT Study rewards", `${S.kidName||"Suri"}, here are your study rewards! Tap the link. (iPhone: if it opens in Safari, copy it and paste it into the app's Rewards tab.)`, url, "pLinkBox"); };
+  $("#pknS").onclick = ()=>{ S.kidName=$("#pkn").value.trim(); save(); render(); };
+  $("#pStudent").onclick = ()=>{ $("#pSwitch").innerHTML = `<p style="margin:0 0 8px"><b>Use this phone for studying instead?</b> Your reward list stays saved.</p><div class="row"><button class="btn sm" id="psY">Yes, switch</button><button class="btn line sm" id="psN">Cancel</button></div>`;
+    $("#psY").onclick=()=>{ S.role=null; S.name=""; save(); go("home"); }; $("#psN").onclick=()=>render(); };
+}
+
+/* =================== AI (Coach) =================== */
+let AI = null, aiReady = false, aiImages = false;
+async function initAI(){
+  try{ AI = window.claude?.use ? await claude.use("sample") : null; }catch(e){ AI = null; }
+  if(AI){ try{ const lim = await AI.limits(); aiImages = !!lim?.images; }catch(e){} }
+  aiReady = true; render();
+}
+const RULES = () => `You are "Coach", a warm, patient tutor inside the UTT Study Coach app. The student is ${S.name||"a student"}, in Year 1 of the 2-year Diploma in Software Engineering at the University of Trinidad and Tobago (UTT). She finds these courses hard:
+- NTWK1007 Introduction to Networks and Network Technologies: ${topicsOf("ntwk").map(t=>t.name).join("; ")}.
+- LOGC1002 Reasoning and Logic for Computing (flowcharts and Python 3): ${topicsOf("logc").map(t=>t.name).join("; ")}.
+- COHW1004 Computer Hardware Essentials: ${topicsOf("cohw").map(t=>t.name).join("; ")}.
+
+How to teach:
+- Simple, step-by-step. One idea at a time. Short sentences. No walls of text. Define every new word in plain English.
+- Start each new concept with an everyday illustration, using Trinidad and Tobago examples where they fit (IP address = house address with street + house number; router = post office sorting mail between towns; switch = office receptionist who knows every desk; encapsulation = packing a parcel in boxes inside boxes; RAM = your desk, storage = your filing cabinet; PSU = the WASA main feeding the house; while loop = "keep stirring the pot until the curry thickens"; sentinel value = "keep taking orders until the customer says DONE"). Then give the proper technical definition, then a short worked example, then ONE quick check question.
+- When you teach a concept, include a "⚠️ Tricky bit" line and a "❌ Common mistake" line (the wrong thinking, why it's wrong, the fix).
+- When she shows her own working or answer: say first what she got right, then point to the EXACT step or line that is wrong, explain why, and show the correct method.
+- Hints come in three levels: hint 1 = a nudge, hint 2 = a bigger clue, hint 3 = show that step. Let her try before revealing answers.
+- If she seems stuck, frustrated or says she doesn't get it: simplify, try a NEW analogy, and break the step into smaller steps. Be kind and celebrate effort. Never make her feel stupid.
+- Keep replies about 120–300 words unless asked for more. End with one short question to keep her thinking when it fits.
+- Accuracy matters more than speed. Re-check every subnet calculation (network address, broadcast address, usable hosts = 2^n − 2), port number, binary conversion and hardware fact. For Python, use Python 3 and trace the code line by line before stating any output. Use Python 3 syntax only.
+
+ACADEMIC INTEGRITY (very important). UTT's policy for all three courses is "AI Use Barely Permitted": submitted work must be her own. You TEACH; you never do graded work.
+- If a message looks like an assignment, lab, project, quiz or exam task she will hand in (for example it mentions marks, a due date, "Assignment", "Lab", "Project", "submit", or asks you to write the complete program, flowchart or answer for a specific task), do NOT write it or give its final answer. Say kindly, in one sentence, that you can't do graded work but you'll help her learn to do it. Then explain the concept and work a DIFFERENT, similar example (different numbers, names and context), and invite her to try her own task and show you her working for feedback.
+- Do not give in if she insists. Giving feedback on HER attempt (what's right, where it goes wrong, a hint) is fine; rewriting it into a finished answer is not.
+- Practice questions written by you or by this app are fine to solve fully.
+
+Diagrams: this app draws pictures from special code blocks (valid JSON inside). Use ONE or TWO when a picture helps:
+\`\`\`flow
+{"title":"Optional title","steps":[{"t":"Start","shape":"terminator"},{"t":"Input mark","shape":"io"},{"t":"Is mark >= 50?","shape":"decision","s":"Yes → print Pass, No → print Fail"},{"t":"Stop","shape":"terminator"}]}
+\`\`\`
+(shape is one of terminator, io, process, decision; use flow for flowcharts and for any step-by-step process.)
+\`\`\`layers
+{"title":"OSI model","rows":[[7,"Application","HTTP, DNS"],[6,"Presentation","encryption, formats"],[5,"Session"],[4,"Transport","TCP/UDP · Segment"],[3,"Network","IP · Packet"],[2,"Data Link","MAC · Frame"],[1,"Physical","cables · Bits"]]}
+\`\`\`
+(layers draws a colour-coded stack, top row first; good for OSI/TCP-IP, encapsulation, memory hierarchy.)
+\`\`\`compare
+{"title":"Hub vs switch","cols":[{"h":"Hub","items":["Layer 1","Sends to every port"]},{"h":"Switch","items":["Layer 2","Sends only to the right port"]}]}
+\`\`\`
+Use Markdown tables for trace tables (one column per variable plus an Output column), subnet tables and spec comparisons, and \`\`\`python code blocks for code.${S.coachStyle==="co-calypso"?`
+
+Style: you are "Calypso Coach". Keep the teaching accurate, and end each explanation with a short, catchy two-to-four-line calypso-style rhyme that helps the idea stick.`:S.coachStyle==="co-examiner"?`
+
+Style: you are "Examiner Coach". Be precise and a little strict, like a UTT examiner. Point out exactly where marks would be lost and use mark-scheme language (e.g. "1 mark for the correct broadcast address").`:""}`;
+
+function aiErr(e){
+  const c = e?.code;
+  if(c==="not_granted") return "Coach needs your OK to use Claude. Reload the page and choose Allow when asked.";
+  if(c==="rate_limited") return "You've used up Coach's allowance for now. It refills in a few hours. Meanwhile, practise with quizzes and speed games in the app.";
+  if(c==="session_expired") return "Please sign in to Claude again, then come back.";
+  if(c==="sampling_disabled"||c==="unavailable") return "The AI Coach isn't available here. Open this page in the Claude app or on claude.ai while signed in.";
+  if(c==="refused") return "Coach couldn't answer that one. Try asking it a different way.";
+  if(c==="invalid_json") return "Coach's answer came back jumbled. Tap to try again.";
+  if(c==="cancelled") return "Stopped.";
+  return "Something went wrong reaching Coach. Check your internet and try again.";
+}
+function aiCall(input, opts={}){ if(!AI) return Promise.reject({code:"unavailable"}); return AI(input, Object.assign({modelTier:"default", effort:"low"}, opts)); }
+function aiJSON(input, opts={}){ if(!AI) return Promise.reject({code:"unavailable"}); return AI.json(input, Object.assign({modelTier:"default", effort:"low", cache:false}, opts)); }
+function aiBanner(){ return `<div class="banner">The AI Coach isn't available in this view. Open it in the Claude app or on claude.ai while signed in.</div>`; }
+const INTEGRITY = `<div class="integrity"><span style="font-size:20px">🎓</span><div><b>Coach teaches, it doesn't do graded work.</b> UTT's rule for these courses is "AI use barely permitted". Paste an assignment, lab or quiz question and Coach will explain the idea and work a <i>different</i> example with you, so what you hand in is all yours.</div></div>`;
+
+/* ---- welcome inside Claude (if she opened the Coach directly) ---- */
+function viewCoachWelcome(v){
+  v.innerHTML = `<div class="hero"><div class="circuit"></div><span class="eyebrow">UTT Study Coach</span><h2>Hi! I'm Coach.</h2><p style="margin:0">Ask me anything about Networks, Logic & Python or Hardware. I'll explain it simply, draw it, and work through problems with you.</p></div>
+  <div class="card"><form id="wf" class="view" style="gap:12px"><div><label class="lab" for="nm">What should I call you?</label><input class="field" id="nm" maxlength="30" value="Suri" required></div><button class="btn block" type="submit">Let's go</button></form></div>`;
+  $("#wf").onsubmit = e=>{ e.preventDefault(); const n=$("#nm").value.trim(); if(!n) return; S.name=n; save(); go("tutor"); };
+}
+
+/* =================== CHAT =================== */
+let chat = [], chatTopic = null, pendingChat = null, chatCtl = null, chatBusy = false, pendingImg = null;
+function workPrompt(t){ return `Let's do "Work it with me"${t?` on ${t.name} (${SUBJ[t.s].code})`:""}. Give me ONE practice problem at my level (not from any assignment). Then guide me one step at a time: ask me to do just the next step and wait for my answer. If I'm wrong or stuck, give hint 1 (a nudge), then hint 2 (a bigger clue), then hint 3 (show that step) before moving on. Tell me exactly what I got right and where I went wrong. Don't reveal the final answer until I've tried each step.`; }
+function reviewPrompt(list){ return `Please help me review my mistakes, one at a time. For each one: explain in simple steps what I probably misunderstood, give me an everyday example, then give me a similar question to try and wait for my answer before moving on.\n\n` + list.map((m,k)=>`${k+1}. [${SUBJ[TOPIC[m.t]?.s]?.code||""} · ${TOPIC[m.t]?.name||""}] ${m.q}\n   I said: ${m.c??m.chosen}\n   Correct: ${m.a??m.correct}`).join("\n"); }
+function viewTutor(v){
+  if(STANDALONE) return viewCoachDoor(v);
+  const t = chatTopic && TOPIC[chatTopic];
+  const starters = t
+    ? [`Explain ${t.name} like I'm new to it`, `Work it with me: ${t.name}`, `Draw me a diagram for ${t.name}`, `What mistakes do students make in ${t.name}?`, `Quiz me with one question on ${t.name}`]
+    : ["Explain subnetting step by step","Work it with me: a trace table","What's the difference between a hub, switch and router?","Explain RAID 0, 1, 5 and 10 with pictures","Why does input() need int()?","Check my working (I'll send a photo)"];
+  v.innerHTML = `
+  <div class="row between"><div><h2 style="font-size:24px">Coach</h2><span class="muted" style="font-size:14px">${t?`Focus: ${esc(SUBJ[t.s].code)} · ${esc(t.name)}`:"Your NTWK, LOGC and COHW tutor"}</span></div>
+   <div class="row">${S.mistakes.length?`<button class="btn line sm" id="cRev">Review my mistakes</button>`:""}${chat.length?`<button class="btn line sm" id="cNew">New chat</button>`:""}</div></div>
+  ${chat.length?"":INTEGRITY}
+  ${aiReady && !AI?aiBanner():""}
+  <div class="chat" id="chatLog">
+    ${chat.length?"":`<div class="msg ai"><div class="md"><p>Hi ${esc(S.name)}! Ask me anything, tap <b>Work it with me</b> and we'll solve a problem together step by step, or ${aiImages?"send a photo of your working (a flowchart, trace table, subnetting or code) and I'll show you exactly where it went right and wrong.":"type out your working and I'll show you exactly where it went right and wrong."}</p></div></div>`}
+  </div>
+  <div class="composer">
+    ${chat.length?"":`<div class="chips"><button class="chip" id="cWork">🧩 Work it with me</button>${starters.map(s=>`<button class="chip" data-s="${esc(s)}">${esc(s)}</button>`).join("")}</div>`}
+    <div id="attachRow"></div>
+    <div class="cbox">
+      ${aiImages?`<button class="iconbtn" id="cCam" title="Attach a photo of your working" aria-label="Attach a photo">${ico("cam")}</button>`:""}
+      <textarea id="cIn" rows="1" placeholder="Ask Coach anything…" aria-label="Message to Coach"></textarea>
+      <button class="iconbtn send" id="cSend" aria-label="Send">${ico(chatBusy?"stop":"send")}</button>
+    </div>
+  </div>`;
+  const log = $("#chatLog");
+  chat.forEach(m=>log.insertAdjacentHTML("beforeend", bubble(m)));
+  if(chat.length >= 12 && !chatBusy) log.insertAdjacentHTML("beforeend", `<div class="banner">Tip: tap <b>New chat</b> when you move to a new question. Short chats make your Coach allowance last longer.</div>`);
+  const inp = $("#cIn");
+  inp.oninput = ()=>{ inp.style.height="auto"; inp.style.height=Math.min(140,inp.scrollHeight)+"px"; };
+  inp.onkeydown = e=>{ if(e.key==="Enter" && !e.shiftKey && window.matchMedia("(pointer:fine)").matches){ e.preventDefault(); $("#cSend").click(); } };
+  $("#cSend").onclick = ()=>{ if(chatBusy){ chatCtl?.abort(); return; } const tx=inp.value.trim(); if(!tx && !pendingImg) return; inp.value=""; sendChat(tx || "Please look at my working in the photo and give me feedback."); };
+  v.querySelectorAll("[data-s]").forEach(b=>b.onclick=()=>b.dataset.s.startsWith("Work it with me")?sendChat(workPrompt(t),"🧩 Work it with me"+(t?": "+t.name:"")):sendChat(b.dataset.s));
+  if($("#cWork")) $("#cWork").onclick = ()=>sendChat(workPrompt(t), "🧩 Work it with me"+(t?": "+t.name:""));
+  if($("#cNew")) $("#cNew").onclick = ()=>{ chatCtl?.abort(); chat=[]; chatTopic=null; pendingImg=null; render(); };
+  if($("#cRev")) $("#cRev").onclick = ()=>{ S.n.review++; save(); chat=[]; sendChat(reviewPrompt(S.mistakes.slice(0,8)), "🔁 Review my mistakes"); };
+  if($("#cCam")) $("#cCam").onclick = ()=>pickImage(()=>renderAttach());
+  renderAttach();
+  if(pendingChat && aiReady){ const p=pendingChat; pendingChat=null; if(typeof p==='string') sendChat(p); else sendChat(p.text, p.show); }
+  else if(chat.length) setTimeout(()=>window.scrollTo({top:document.body.scrollHeight}),30);
+}
+function pickImage(cb){
+  const f=$("#fileIn"); f.value="";
+  f.onchange = ()=>{ const file=f.files[0]; if(!file) return; if(!/^image\//.test(file.type)){ toast("Please choose a photo."); return; } pendingImg = {file, url:URL.createObjectURL(file)}; cb(); };
+  f.click();
+}
+function renderAttach(){
+  const r=$("#attachRow"); if(!r) return;
+  r.innerHTML = pendingImg?`<div class="attach"><img src="${pendingImg.url}" alt="Attached photo"><span style="flex:1">Photo of your working attached</span><button class="btn line sm" id="rmImg">Remove</button></div>`:"";
+  if(pendingImg) $("#rmImg").onclick=()=>{ pendingImg=null; renderAttach(); };
+}
+function bubble(m){
+  if(m.role==="user") return `<div class="msg me">${esc(m.show||m.content)}${m.img?`<span class="imgtag">📷 Photo attached</span>`:""}</div>`;
+  return `<div class="msg ai"><div class="md">${m.pending?thinking():md(m.content)}</div>${m.err?`<p class="banner" style="margin:8px 0 0">${esc(m.err)}</p>`:""}</div>`;
+}
+async function sendChat(text, show){
+  if(chatBusy) return;
+  const img = pendingImg; pendingImg = null;
+  chat.push({role:"user", content:text, show, img:!!img});
+  const aiMsg = {role:"assistant", content:"", pending:true}; chat.push(aiMsg);
+  chatBusy = true; if(tab==="tutor") render();
+  window.scrollTo({top:document.body.scrollHeight, behavior:"smooth"});
+  chatCtl = new AbortController();
+  const turns = chat.filter(m=>m!==aiMsg && !m.err && (m.role==="user" || m.content)).slice(-10).map(m=>({role:m.role, content: m.content + (m.img?"\n[The student attached a photo with this message.]":"")}));
+  while(turns.length && turns[0].role!=="user") turns.shift();
+  const ctx = RULES() + (chatTopic && TOPIC[chatTopic] ? `\n\nShe is currently studying: ${SUBJ[TOPIC[chatTopic].s].code} · ${TOPIC[chatTopic].name} (${TOPIC[chatTopic].learn.join("; ")}).` : "") + (img? "\n\nA photo is attached. Read it carefully. If it is her working (flowchart, trace table, subnetting, code), give feedback step by step: what is right, the exact step that is wrong, why, and the correct method. Remember the academic integrity rules: if it is a graded task, give feedback and hints on her attempt, not a finished answer." : "");
+  try{
+    const opts = {signal:chatCtl.signal, cache:false, onText:({text})=>{ aiMsg.pending=false; aiMsg.content=text; const n=$("#chatLog")?.lastElementChild; if(n && tab==="tutor") n.querySelector(".md").innerHTML = md(text); }};
+    if(img) opts.images = [img.file];
+    else if(text.length < 140 && turns.length <= 3 && !/work it|step|trace|subnet|check|working|photo|flowchart|code|mark/i.test(text)) opts.modelTier = "quick";
+    const r = await aiCall([{role:"user",content:ctx}, ...turns], opts);
+    aiMsg.pending=false; aiMsg.content = r.text;
+    S.n.tutor++; if(img) S.n.photo++;
+    const k="tutor"+today(); if((S.lessonDay[k]||0) < 10){ S.lessonDay[k]=(S.lessonDay[k]||0)+1; addXP(img?8:4, img?"working checked":"asked Coach"); } else save();
+  }catch(e){
+    aiMsg.pending=false; aiMsg.content = e.text || "";
+    if(e.code!=="cancelled") aiMsg.err = aiErr(e); else if(!aiMsg.content) aiMsg.content = "_Stopped._";
+  }
+  chatBusy = false; if(tab==="tutor") render();
+}
+
+/* =================== LESSONS (inside Claude) =================== */
+let lessonCtl = null;
+function viewCoachTopic(v, t){
+  S.subj = t.s; save();
+  const s = SUBJ[t.s];
+  v.innerHTML = `
+  <button class="back" id="bk">← ${esc(s.name)} lessons</button>
+  <div class="hero subj s-${t.s}"><div class="circuit"></div><span class="eyebrow">${s.code} · Topic ${topicsOf(t.s).indexOf(t)+1}</span><h2>${esc(t.name)}</h2></div>
+  <div class="card s-${t.s}"><span class="eyebrow">What you'll learn</span><ul class="learnlist" style="margin-top:8px">${t.learn.map((x,k)=>`<li><span>${"abcdefg"[k]}</span><div>${esc(x)}</div></li>`).join("")}</ul></div>
+  <div class="grid2 s-${t.s}">
+    <button class="btn sub" id="tLesson" ${AI?"":"disabled"}>Step-by-step lesson</button>
+    <button class="btn subghost" id="tEx" ${AI?"":"disabled"}>New worked example</button>
+    <button class="btn subghost" id="tVis" ${AI?"":"disabled"}>Draw it for me</button>
+    <button class="btn subghost" id="tWork">Work it with me</button>
+  </div>
+  <div class="card" id="lessonBox" hidden><div class="row between"><span class="eyebrow" id="lessonLbl">Lesson</span><button class="btn line sm" id="lessonStop" hidden>Stop</button></div><div class="md" id="lessonOut" style="margin-top:8px"></div>
+    <button class="btn ghost block" id="lAsk" hidden style="margin-top:10px">Ask Coach about this</button></div>
+  ${aiReady && !AI?aiBanner():""}`;
+  $("#bk").onclick = ()=>go("topics");
+  $("#tLesson").onclick = ()=>runLesson(t, "lesson");
+  $("#tEx").onclick = ()=>runLesson(t, "example");
+  $("#tVis").onclick = ()=>runLesson(t, "visual");
+  $("#tWork").onclick = ()=>{ chatTopic=t.id; chat=[]; pendingChat={text:workPrompt(t), show:"🧩 Work it with me: "+t.name}; go("tutor"); };
+  $("#lAsk").onclick = ()=>{ chatTopic=t.id; go("tutor"); };
+  if(autoLesson===t.id && aiReady){ autoLesson=null; runLesson(t, "lesson"); }
+}
+let autoLesson = null;
+async function runLesson(t, kind){
+  const box=$("#lessonBox"), out=$("#lessonOut"), stop=$("#lessonStop");
+  box.hidden=false; $("#lessonLbl").textContent = {lesson:"Step-by-step lesson", example:"Worked example", visual:"Picture explanation"}[kind];
+  out.innerHTML = thinking(kind==="example"?"Coach is writing a fresh example":kind==="visual"?"Coach is drawing":"Coach is preparing your lesson");
+  box.scrollIntoView({behavior:"smooth",block:"start"});
+  lessonCtl?.abort(); lessonCtl = new AbortController(); stop.hidden=false; stop.onclick=()=>lessonCtl.abort();
+  const topic = `"${t.name}" from ${SUBJ[t.s].code} ${SUBJ[t.s].full} (covers: ${t.learn.join("; ")})`;
+  const prompt = RULES() + "\n\n" + (kind==="example"
+    ? `Give ONE new worked example on ${topic}, set in Trinidad and Tobago. Show the question first, then solve it in short numbered steps with all working (tables or diagram blocks where they help). End with "⚠️ Tricky bit:" and one sentence. Make it different from a typical textbook example. Random seed: ${Math.random().toString(36).slice(2,7)}.`
+    : kind==="visual"
+    ? `Explain ${topic} mainly with pictures: one or two diagram blocks (flow, layers or compare) or a Markdown table, each with 2-3 short sentences underneath saying what to notice. Start with a one-line everyday Trinidad and Tobago comparison.`
+    : `Teach ${topic} as a short lesson for a student who is struggling with it. Use these headings: "### In everyday words" (a Trinidad and Tobago illustration), "### The proper definition", "### Step by step" (with a diagram block or table), "### Worked example", "### ⚠️ Tricky bit", "### ❌ Common mistakes" (wrong thinking → why it's wrong → the fix), "### Quick check" (one question; put the answer on the last line after "Answer:").`);
+  try{
+    await aiCall(prompt, {signal:lessonCtl.signal, cache: kind==="lesson"?{gcTime:86400000}:false, onText:({text})=>{ out.innerHTML = md(text); }});
+    const st = topicStat(t.id); st.lessons++; S.n.lesson++; if(kind==="visual") S.n.visual++;
+    const k = t.id+kind;
+    if(S.lessonDay[k]!==today()){ S.lessonDay[k]=today(); addXP(kind==="visual"?XP.visual:XP.lesson, kind==="example"?"worked example":kind==="visual"?"diagram":"lesson"); } else save();
+    $("#lAsk").hidden=false;
+  }catch(e){ if(e.code!=="cancelled") out.innerHTML = (e.text?md(e.text):"") + `<p class="banner">${esc(aiErr(e))}</p>`; else if(e.text) out.innerHTML = md(e.text); }
+  stop.hidden=true;
+}
+
+/* =================== STRUCTURED QUESTIONS (marked by Coach) =================== */
+let P2 = null, structTopic = null;
+function viewCoachPractice(v){
+  const s = SUBJ[S.subj] || SUBJECTS[0];
+  const ts = topicsOf(s.id);
+  const sel = structTopic && TOPIC[structTopic]?.s===s.id ? structTopic : ts[0].id;
+  v.innerHTML = `<div><h2 style="font-size:26px">Structured questions</h2><p class="muted" style="margin:4px 0 0">Coach writes an exam-style long question. You type your answer (or add a photo of your working), and Coach marks it part by part.</p></div>
+  ${subjPicker(s.id)}
+  <div class="card s-${s.id}"><span class="eyebrow">${s.code}</span>
+    <label class="lab" for="p2t" style="margin-top:8px">Topic</label><select class="field" id="p2t">${ts.map(t=>`<option value="${t.id}" ${t.id===sel?"selected":""}>${esc(t.name)}</option>`).join("")}</select>
+    <button class="btn sub block" id="pP2" style="margin-top:10px" ${AI?"":"disabled"}>Write me a question</button>
+    <p class="muted" style="margin:8px 0 0;font-size:13px">+${XP.structuredBase} XP for every marked question, plus ${XP.perMark} XP for each mark you earn.</p></div>
+  ${INTEGRITY}
+  ${aiReady && !AI?aiBanner():""}`;
+  bindSubjPicker(v);
+  $("#p2t").onchange = ()=>{ structTopic=$("#p2t").value; };
+  $("#pP2").onclick = ()=>startStructured($("#p2t").value);
+}
+async function startStructured(topicId){
+  P2 = {topic:topicId, loading:true, q:null, answers:{}, marking:false, result:null, err:""};
+  go("structured");
+  const t = TOPIC[topicId], s = SUBJ[t.s];
+  try{
+    const q = await aiJSON(`You write exam-style structured questions for ${s.code} ${s.full} at the University of Trinidad and Tobago (Year 1 diploma).
+Topic: ${t.name} (${t.learn.join("; ")}).
+Write ONE practice question worth 10-15 marks with 3-4 parts that build on each other (e.g. define/explain, apply or calculate, draw or trace, troubleshoot or justify). ${t.s==="logc"?"Where useful, include a short Python 3 program or ask for a flowchart described in words or a trace table. ":""}${t.s==="ntwk"&&t.id==="n6"?"Include a subnetting calculation with exact, checked figures. ":""}Use Trinidad and Tobago contexts. Make every figure consistent and check that every part has one clear correct answer.
+Reply with only JSON: {"title": "short title", "scenario": "the information given, in Markdown (code in a python code block)", "parts": [{"label": "(a)", "task": "what to do", "marks": number}]}
+Random seed: ${Math.random().toString(36).slice(2,8)}`);
+    if(!q || !Array.isArray(q.parts) || !q.parts.length) throw {code:"invalid_json"};
+    P2.q = {title:String(q.title||t.name), scenario:String(q.scenario||""), parts:q.parts.map(p=>({label:String(p.label||""), task:String(p.task||""), marks:Math.max(1,Math.round(+p.marks||1))}))};
+  }catch(e){ P2.err = aiErr(e); }
+  P2.loading=false; if(tab==="structured") render();
+}
+function viewStructured(v){
+  if(!P2) return go("practice");
+  const t = TOPIC[P2.topic], s = SUBJ[t.s];
+  const head = `<button class="back" id="bk">← Structured questions</button>`;
+  if(P2.loading){ v.innerHTML = head+`<div class="card"><span class="eyebrow">${s.code} · ${esc(t.name)}</span><h3 style="margin-top:6px">Coach is setting your question</h3><p class="muted">Usually 20–60 seconds.</p>${thinking("Writing the question")}</div>`; $("#bk").onclick=()=>{P2=null;go("practice");}; return; }
+  if(P2.err && !P2.q){ v.innerHTML = head+`<div class="card"><p class="banner">${esc(P2.err)}</p><button class="btn" id="retry" style="margin-top:10px">Try again</button></div>`; $("#bk").onclick=()=>go("practice"); $("#retry").onclick=()=>startStructured(P2.topic); return; }
+  const q=P2.q, total=q.parts.reduce((a,p)=>a+p.marks,0), R=P2.result;
+  v.innerHTML = head + `
+  <div class="card s-${t.s}"><span class="eyebrow">${s.code} · ${esc(t.name)} · ${total} marks</span><h3 style="margin-top:4px">${esc(q.title)}</h3><div class="md" style="margin-top:8px">${md(q.scenario)}</div>
+   ${q.parts.map((p,k)=>{ const r=R?.parts?.[k];
+    return `<div class="part"><div class="row between"><b>${esc(p.label)} ${esc(p.task)}</b><span class="score">${r?`${r.awarded}/${p.marks}`:`${p.marks} mark${p.marks===1?"":"s"}`}</span></div>
+     ${R?`<div class="muted" style="white-space:pre-wrap;font-size:14px;font-family:var(--f-mono)">${esc(P2.answers[k]||"(no answer)")}</div>
+      ${r?`<div class="fb ${r.awarded>=p.marks?"ok":"bad"}"><div class="md">${md(r.feedback||"")}</div>${r.fix && r.awarded<p.marks?`<div class="fixbox"><span class="lbl">How to fix it</span><div class="md">${md(r.fix)}</div></div>`:""}</div>`:""}`
+     :`<textarea class="field mono" id="ans${k}" placeholder="Your answer" aria-label="Answer to part ${esc(p.label)}">${esc(P2.answers[k]||"")}</textarea>`}
+    </div>`;}).join("")}
+  </div>
+  ${R?`<div class="hero subj s-${t.s}"><div class="circuit"></div><span class="eyebrow">Your mark</span><div class="big">${R.total}/${total}</div><h2>${esc(R.summary||"")}</h2></div>
+     ${R.model?`<div class="card"><span class="eyebrow">Model answer</span><div class="md" style="margin-top:8px">${md(R.model)}</div></div>`:""}
+     <div class="grid2"><button class="btn" id="p2again">New question</button><button class="btn ghost" id="p2ask">Discuss with Coach</button></div>`
+   :`${P2.err?`<p class="banner">${esc(P2.err)}</p>`:""}<div id="p2Attach"></div>
+     <div class="grid2">${aiImages?`<button class="btn line" id="p2cam">${ico("cam")} Photo of my working</button>`:""}<button class="btn gold" id="p2mark" ${P2.marking?"disabled":""}>${P2.marking?"Marking…":"Mark my answer"}</button></div>
+     ${P2.marking?`<div class="card">${thinking("Coach is marking")}</div>`:""}`}`;
+  $("#bk").onclick = ()=>{ P2=null; go("practice"); };
+  if(!R){
+    q.parts.forEach((_,k)=>{ const el=$("#ans"+k); if(el) el.oninput=()=>{ P2.answers[k]=el.value; }; });
+    const showA=()=>{ const a=$("#p2Attach"); if(a) a.innerHTML = P2.img?`<div class="attach"><img src="${P2.img.url}" alt="Working photo"><span style="flex:1">Photo of working attached</span></div>`:""; };
+    showA();
+    if($("#p2cam")) $("#p2cam").onclick=()=>pickImage(()=>{ P2.img=pendingImg; pendingImg=null; showA(); });
+    $("#p2mark").onclick = markStructured;
+  } else {
+    $("#p2again").onclick = ()=>startStructured(P2.topic);
+    $("#p2ask").onclick = ()=>{ chatTopic=P2.topic; chat=[]; pendingChat=`I just did this structured question and got ${R.total}/${total}.\n\n${q.title}\n${q.scenario}\n\n${q.parts.map((p,k)=>`${p.label} ${p.task}\nMy answer: ${P2.answers[k]||"(blank)"}`).join("\n\n")}\n\nHelp me understand the parts I lost marks on, one at a time.`; go("tutor"); };
+  }
+}
+async function markStructured(){
+  const q=P2.q, t=TOPIC[P2.topic], s=SUBJ[t.s];
+  if(!q.parts.some((_,k)=>(P2.answers[k]||"").trim()) && !P2.img){ toast("Write an answer or add a photo first."); return; }
+  P2.marking=true; P2.err=""; render();
+  try{
+    const opts = {effort:"medium"}; if(P2.img) opts.images=[P2.img.file];
+    const r = await aiJSON(`You are a fair, encouraging examiner for ${s.code} ${s.full} at UTT, marking a Year 1 student's practice answer. Award method marks for correct working even if a final figure is wrong, and accept correct alternative wording. Check every calculation, port number, Python output and hardware fact yourself before marking.${S.coachStyle==="co-examiner"?" Be strict and use mark-scheme language.":""}
+Question: ${q.title}
+${q.scenario}
+
+${q.parts.map((p,k)=>`${p.label} ${p.task} [${p.marks} marks]\nStudent's answer: ${(P2.answers[k]||"").trim()||"(left blank"+(P2.img?" – see the attached photo of the student's working)":")")}`).join("\n\n")}
+
+Reply with only JSON: {"parts": [{"awarded": number, "feedback": "1-3 short sentences: what she got right, then exactly where it went wrong and why", "fix": "the correct method for what she missed, step by step (Markdown)"}], "total": number, "summary": "one encouraging sentence on what to do next", "model": "a full model answer in Markdown"}
+The parts array must have exactly ${q.parts.length} items in order.`, opts);
+    if(!r || !Array.isArray(r.parts)) throw {code:"invalid_json"};
+    r.parts = q.parts.map((p,k)=>{ const x=r.parts[k]||{}; return {awarded:Math.max(0,Math.min(p.marks, Math.round(+x.awarded||0))), feedback:String(x.feedback||""), fix:String(x.fix||"")}; });
+    r.total = r.parts.reduce((a,p)=>a+p.awarded,0);
+    P2.result = r; P2.marking=false;
+    S.n.structured++; if(P2.img) S.n.photo++;
+    addXP(XP.structuredBase + r.total*XP.perMark, "structured question marked");
+  }catch(e){ P2.marking=false; P2.err = aiErr(e); }
+  if(tab==="structured") render();
+}
+
+/* ---- App → Coach hand-off: #go-<payload> ---- */
+function handleCoachHash(){
+  const h = location.hash;
+  const m = h.match(/^#go-([A-Za-z0-9_-]+)$/);
+  if(!m){ tab="tutor"; return; }
+  let o; try{ o = b64d(m[1]); }catch(e){ tab="tutor"; return; }
+  if(o.n) S.name = String(o.n).slice(0,30);
+  if(o.st!==undefined) S.coachStyle = SHOP.some(x=>x.id===o.st) ? o.st : null;
+  if(SUBJ[o.s]) S.subj = o.s;
+  const t = TOPIC[o.t] ? o.t : null;
+  if(Array.isArray(o.k)) S.mistakes = o.k.map(x=>({t:x.t, q:x.q, chosen:x.c, correct:x.a}));
+  save();
+  if(o.m==="lesson" && t){ autoLesson=t; tab="topics"; sub=t; }
+  else if(o.m==="work"){ chatTopic=t; chat=[]; pendingChat={text:workPrompt(t&&TOPIC[t]), show:"🧩 Work it with me"+(t?": "+TOPIC[t].name:"")}; tab="tutor"; }
+  else if(o.m==="review" && S.mistakes.length){ chatTopic=t; chat=[]; S.n.review++; save(); pendingChat={text:reviewPrompt(S.mistakes), show:"🔁 Review my mistakes ("+S.mistakes.length+")"}; tab="tutor"; }
+  else if(o.m==="struct"){ structTopic=t; tab="practice"; }
+  else { chatTopic=t; tab="tutor"; }
+  try{ history.replaceState(null,"",location.pathname+location.search); }catch(e){}
+}
+
+/* =================== BOOT =================== */
+let installEvt = null;
+window.addEventListener("beforeinstallprompt", e=>{ e.preventDefault(); installEvt = e; if(tab==="home") render(); });
+applyTheme();
+if(COACH_MODE){
+  handleCoachHash();
+  window.addEventListener("hashchange", ()=>{ if(/^#go-/.test(location.hash)){ handleCoachHash(); render(); } });
+} else {
+  const onHash = ()=>{ handleClaim(); handleRewardsLink(); handleProgressLink(); };
+  window.addEventListener("hashchange", onHash);
+  onHash();
+}
+render();
+if(COACH_MODE) initAI();
+initCloud();
+
+</script>
