@@ -350,6 +350,26 @@ nav.tabs button.on svg{stroke-width:2.4}
 .cmp h4{font-size:14px;margin-bottom:4px;color:var(--brand)}
 .cmp ul{margin:0;padding-left:18px;font-size:13px}
 
+
+/* network visuals */
+svg.net{width:100%;height:auto}
+.net .nl{stroke:var(--sub);stroke-width:2.5;fill:none} .net .nl.dash{stroke-dasharray:5 5} .net .nl.red{stroke:var(--red)}
+.net .ndot{fill:var(--sub)}
+.net .nn circle{fill:var(--paper);stroke:var(--sub);stroke-width:2}
+.net .ne{font-size:18px;text-anchor:middle} .net .nt{font-size:11px;font-weight:700;text-anchor:middle;fill:var(--ink)}
+.pinwrap{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px}
+.pins{display:flex;flex-direction:column;gap:4px;background:var(--bg);border-radius:12px;padding:10px}
+.pins b{font-family:var(--f-display);color:var(--sub)}
+.pin{display:grid;grid-template-columns:18px 30px 1fr;gap:6px;align-items:center;font-size:13px}
+.pin .pn{font-family:var(--f-mono);font-weight:700;color:var(--muted)}
+.pin .wire{height:12px;border-radius:6px;border:1px solid rgba(0,0,0,.25)}
+.ltable.bin th,.ltable.bin td{text-align:center;font-family:var(--f-mono);padding:6px 2px}
+.ltable.bin td{font-size:18px;font-weight:700;color:var(--muted)} .ltable.bin td.on{color:var(--sub);background:var(--sub-soft)}
+.ipv{display:flex;flex-direction:column;gap:8px}
+.ipbits{display:flex;flex-wrap:wrap;font-family:var(--f-mono);font-size:13px;font-weight:700;justify-content:center;background:var(--bg);border-radius:10px;padding:8px 4px}
+.ipbits i{font-style:normal;width:9px;text-align:center} .ipbits u{text-decoration:none;width:8px;text-align:center;color:var(--muted)}
+.ipbits .nb,.iplg .nb{color:var(--sub)} .ipbits .hb,.iplg .hb{color:var(--gold)}
+.iplg{display:flex;gap:14px;justify-content:center;font-size:13px;font-weight:700}
 /* picture lessons */
 code,pre,kbd,samp,textarea,.mono,.qcode,.fc text,.ltable.tt td{font-variant-ligatures:none;font-feature-settings:"liga" 0,"calt" 0}
 .tsel{width:auto;min-width:80px;display:inline-block}

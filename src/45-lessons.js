@@ -86,8 +86,47 @@ function visHTML(v){
   if(v.k==="boxes") return `<div class="vboxes">${v.items.map(([n,val,old])=>`<div class="vbox"><div class="vv">${old!==undefined?`<s>${esc(old)}</s>`:""}${esc(val)}</div><div class="vn">${esc(n)}</div></div>`).join("")}</div>${v.cap?`<p class="viscap">${inl(v.cap)}</p>`:""}`;
   if(v.k==="table") return `<div class="ltable"><table><thead><tr>${v.h.map(x=>`<th>${inl(x)}</th>`).join("")}</tr></thead><tbody>${v.rows.map(r=>`<tr>${r.map(x=>`<td>${inl(String(x))}</td>`).join("")}</tr>`).join("")}</tbody></table></div>${v.cap?`<p class="viscap">${inl(v.cap)}</p>`:""}`;
   if(v.k==="steps") return `<div class="lsteps">${v.items.map(([e,t],k)=>`<div class="lstep"><span class="le">${e}</span><span>${inl(t)}</span></div>${k<v.items.length-1?`<i aria-hidden="true">↓</i>`:""}`).join("")}</div>`;
+  if(v.k==="net") return netSVG(v);
+  if(v.k==="pins") return pinsHTML(v);
+  if(v.k==="bin") return binHTML(v);
+  if(v.k==="ip") return ipHTML(v);
+  if(v.k==="layers") return layersHTML(v);
+  if(v.k==="compare") return compareHTML(v);
   if(v.k==="scene") return `<div class="scene"><span class="se">${v.e}</span><div>${v.items?v.items.map(([a,b])=>`<div class="sc-row"><b>${inl(a)}</b><span>${inl(b)}</span></div>`).join(""):""}</div></div>`;
   return "";
+}
+
+/* ---------- network visuals ---------- */
+function netSVG(v){
+  const W=v.w||340, H=v.h||200, by=Object.fromEntries(v.n.map(n=>[n[0],n]));
+  const links=(v.l||[]).map(([a,b,st])=>{ const A=by[a], B=by[b]; return `<line x1="${A[3]}" y1="${A[4]}" x2="${B[3]}" y2="${B[4]}" class="nl ${st||""}"/>`; }).join("");
+  const ring = v.ring ? `<ellipse cx="${v.ring[0]}" cy="${v.ring[1]}" rx="${v.ring[2]}" ry="${v.ring[3]}" class="nl"/>` : "";
+  const nodes=v.n.map(([id,e,lab,x,y])=> e==="." ? `<circle cx="${x}" cy="${y}" r="4" class="ndot"/>` : `<g class="nn"><circle cx="${x}" cy="${y}" r="19"/><text x="${x}" y="${y+6}" class="ne">${e}</text>${lab?`<text x="${x}" y="${y+33}" class="nt">${esc(lab)}</text>`:""}</g>`).join("");
+  return `<div class="fcwrap">${v.title?`<div class="vis-title">${esc(v.title)}</div>`:""}<svg class="net" viewBox="0 0 ${W} ${H}" style="max-width:${W+40}px" role="img" aria-label="${esc(v.title||"Network diagram")}">${ring}${links}${nodes}</svg>${v.cap?`<p class="viscap" style="text-align:center">${inl(v.cap)}</p>`:""}</div>`;
+}
+const PINS = {B:["white/orange","orange","white/green","blue","white/blue","green","white/brown","brown"], A:["white/green","green","white/orange","blue","white/blue","orange","white/brown","brown"]};
+const WIRE = {orange:"#E8771E", green:"#2E9B48", blue:"#2F6FEB", brown:"#7A4B2A"};
+function pinsHTML(v){
+  const one = s => `<div class="pins"><b>T568${s}</b>${PINS[s].map((c,k)=>{ const col=WIRE[c.replace("white/","")], st=c.startsWith("white/"); return `<div class="pin"><span class="pn">${k+1}</span><span class="wire" style="${st?`background:repeating-linear-gradient(135deg,#fff 0 6px,${col} 6px 12px)`:`background:${col}`}"></span><span class="wn">${c}</span></div>`; }).join("")}</div>`;
+  return `<div class="pinwrap">${(v.std||"B").split("").map(one).join("")}</div>${v.cap?`<p class="viscap">${inl(v.cap)}</p>`:""}`;
+}
+function binHTML(v){
+  const n=v.n, bits=[128,64,32,16,8,4,2,1].map(p=>(n&p)?1:0);
+  return `<div class="ltable bin"><table><thead><tr>${[128,64,32,16,8,4,2,1].map(p=>`<th>${p}</th>`).join("")}</tr></thead><tbody><tr>${bits.map(b=>`<td class="${b?"on":""}">${b}</td>`).join("")}</tr></tbody></table></div>
+  <p class="viscap">${bits.map((b,k)=>b?[128,64,32,16,8,4,2,1][k]:null).filter(x=>x!==null).join(" + ")||"0"} = <b>${n}</b></p>`;
+}
+function ipCalc(ip, cidr){
+  const a = ip.split(".").map(Number), num = ((a[0]<<24)>>>0) + (a[1]<<16) + (a[2]<<8) + a[3];
+  const mask = cidr===0 ? 0 : (0xFFFFFFFF << (32-cidr))>>>0, net = (num & mask)>>>0, bc = (net | (~mask>>>0))>>>0;
+  const d = x => [24,16,8,0].map(s=>(x>>>s)&255).join(".");
+  const hosts = cidr>=31 ? 0 : Math.pow(2,32-cidr)-2;
+  return {mask:d(mask), net:d(net), bc:d(bc), first:d(net+1), last:d(bc-1), hosts, bits:a.map(o=>o.toString(2).padStart(8,"0")).join("")};
+}
+function ipHTML(v){
+  const r = ipCalc(v.ip, v.cidr);
+  const bits = r.bits.split("").map((b,k)=>`<i class="${k<v.cidr?"nb":"hb"}">${b}</i>${k%8===7&&k<31?`<u>.</u>`:""}`).join("");
+  return `<div class="ipv"><div class="ipbits">${bits}</div><div class="iplg"><span class="nb">network bits: ${v.cidr}</span><span class="hb">host bits: ${32-v.cidr}</span></div>
+  <div class="ltable"><table><tbody>${[["Address",`${v.ip}/${v.cidr}`],["Subnet mask",r.mask],["Network address",r.net],["First usable host",r.first],["Last usable host",r.last],["Broadcast address",r.bc],["Usable hosts",`2<sup>${32-v.cidr}</sup> − 2 = ${r.hosts}`]].map(([a,b])=>`<tr><td>${a}</td><td class="mono"><b>${b}</b></td></tr>`).join("")}</tbody></table></div></div>`;
 }
 
 /* ---------- trace table player ---------- */
@@ -237,7 +276,7 @@ function viewLesson(v){
     <span class="ltag ltag-${sc.tag}">${LTAG[sc.tag]||""}</span>
     ${sc.h?`<h2 class="lh">${inl(sc.h)}</h2>`:""}
     ${(sc.p||[]).map(p=>`<p class="lp">${ptext(p)}</p>`).join("")}
-    ${visHTML(sc.vis)}
+    ${visHTML(sc.vis)}${visHTML(sc.vis2)}
     ${sc.code?`<pre class="qcode">${esc(sc.code)}</pre>${sc.out!==undefined?`<div class="lout"><span>Output</span><pre>${esc(sc.out)}</pre></div>`:""}`:""}
     ${sc.run && PY_OK?`<details class="tryit"><summary>▶️ Try it yourself: run and change this code</summary>${runnerHTML(sc.run.code||sc.code, sc.run.inputs||[])}</details>`:""}
     ${sc.tricky?`<div class="tricky">${ptext(sc.tricky)}</div>`:""}

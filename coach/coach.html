@@ -350,6 +350,26 @@ nav.tabs button.on svg{stroke-width:2.4}
 .cmp h4{font-size:14px;margin-bottom:4px;color:var(--brand)}
 .cmp ul{margin:0;padding-left:18px;font-size:13px}
 
+
+/* network visuals */
+svg.net{width:100%;height:auto}
+.net .nl{stroke:var(--sub);stroke-width:2.5;fill:none} .net .nl.dash{stroke-dasharray:5 5} .net .nl.red{stroke:var(--red)}
+.net .ndot{fill:var(--sub)}
+.net .nn circle{fill:var(--paper);stroke:var(--sub);stroke-width:2}
+.net .ne{font-size:18px;text-anchor:middle} .net .nt{font-size:11px;font-weight:700;text-anchor:middle;fill:var(--ink)}
+.pinwrap{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px}
+.pins{display:flex;flex-direction:column;gap:4px;background:var(--bg);border-radius:12px;padding:10px}
+.pins b{font-family:var(--f-display);color:var(--sub)}
+.pin{display:grid;grid-template-columns:18px 30px 1fr;gap:6px;align-items:center;font-size:13px}
+.pin .pn{font-family:var(--f-mono);font-weight:700;color:var(--muted)}
+.pin .wire{height:12px;border-radius:6px;border:1px solid rgba(0,0,0,.25)}
+.ltable.bin th,.ltable.bin td{text-align:center;font-family:var(--f-mono);padding:6px 2px}
+.ltable.bin td{font-size:18px;font-weight:700;color:var(--muted)} .ltable.bin td.on{color:var(--sub);background:var(--sub-soft)}
+.ipv{display:flex;flex-direction:column;gap:8px}
+.ipbits{display:flex;flex-wrap:wrap;font-family:var(--f-mono);font-size:13px;font-weight:700;justify-content:center;background:var(--bg);border-radius:10px;padding:8px 4px}
+.ipbits i{font-style:normal;width:9px;text-align:center} .ipbits u{text-decoration:none;width:8px;text-align:center;color:var(--muted)}
+.ipbits .nb,.iplg .nb{color:var(--sub)} .ipbits .hb,.iplg .hb{color:var(--gold)}
+.iplg{display:flex;gap:14px;justify-content:center;font-size:13px;font-weight:700}
 /* picture lessons */
 code,pre,kbd,samp,textarea,.mono,.qcode,.fc text,.ltable.tt td{font-variant-ligatures:none;font-feature-settings:"liga" 0,"calt" 0}
 .tsel{width:auto;min-width:80px;display:inline-block}
@@ -578,17 +598,17 @@ const BANK = [
   why:"A switch keeps a MAC address table, like an office receptionist who knows exactly which desk everyone sits at.",trap:"A hub repeats every signal out of every port, like shouting across the whole office."},
  {id:"n5-02",t:"n5",d:"e",ty:"mc",q:"You need to join a fibre-optic link to a copper Ethernet switch port. Which device do you use?",o:["Bridge","Access point","Media converter","Modem"],a:2,
   why:"A media converter changes the signal from one type of media (fibre/light) to another (copper/electricity).",trap:"A bridge joins two network segments; it doesn't change the type of cable."},
- {id:"n6-01",t:"n6",d:"e",ty:"fill",q:"Convert the binary octet 11000000 to decimal.",a:["192"],tags:["binary"],
+ {id:"n6-01",v:{k:"b2d",b:"11000000"},t:"n6",d:"e",ty:"fill",q:"Convert the binary octet 11000000 to decimal.",a:["192"],tags:["binary"],
   why:"Place values: 128 64 32 16 8 4 2 1. The two 1s are 128 + 64 = 192.",trap:"Start from the left with 128, not 1."},
- {id:"n6-02",t:"n6",d:"m",ty:"mc",q:"How many usable host addresses are in the network 192.168.10.0/26?",o:["64","62","30","254"],a:1,tags:["subnet"],
+ {id:"n6-02",v:{k:"hosts",ip:"192.168.10.0/26"},t:"n6",d:"m",ty:"mc",q:"How many usable host addresses are in the network 192.168.10.0/26?",o:["64","62","30","254"],a:1,tags:["subnet"],
   why:"/26 leaves 32 − 26 = 6 host bits. 2⁶ = 64 addresses, minus 2 (network and broadcast) = 62 usable hosts.",trap:"64 forgets to subtract the network and broadcast addresses: usable hosts = 2ⁿ − 2."},
- {id:"n6-03",t:"n6",d:"h",ty:"mc",q:"What is the broadcast address of the subnet that contains 192.168.1.70/27?",o:["192.168.1.64","192.168.1.95","192.168.1.127","192.168.1.255"],a:1,tags:["subnet"],
+ {id:"n6-03",v:{k:"bc",ip:"192.168.1.70/27"},t:"n6",d:"h",ty:"mc",q:"What is the broadcast address of the subnet that contains 192.168.1.70/27?",o:["192.168.1.64","192.168.1.95","192.168.1.127","192.168.1.255"],a:1,tags:["subnet"],
   why:"/27 → block size 32. Subnets start at .0, .32, .64, .96. 70 is in the .64 subnet, which runs .64 to .95. The broadcast is the last address: .95.",trap:"192.168.1.64 is the network address (first). The broadcast is the LAST address before the next subnet starts (.96 − 1 = .95)."},
  {id:"n6-04",t:"n6",d:"m",ty:"mc",q:"A laptop shows the IP address 169.254.12.7. What does this usually mean?",o:["It's using the loopback address","It couldn't get an address from a DHCP server","It has a public IP address","It's connected to a WAN"],a:1,
   why:"169.254.x.x is APIPA. Windows gives itself one of these when it asks for a DHCP address and nobody answers.",trap:"Loopback is 127.0.0.1. APIPA is the 'I asked for an address and got no reply' sign."},
- {id:"n6-05",t:"n6",d:"m",ty:"tf",q:"172.20.5.1 is a private IP address.",a:true,
+ {id:"n6-05",v:{k:"private",ip:"172.20.5.1"},t:"n6",d:"m",ty:"tf",q:"172.20.5.1 is a private IP address.",a:true,
   why:"The private ranges are 10.0.0.0/8, 172.16.0.0 to 172.31.255.255 (172.16.0.0/12) and 192.168.0.0/16. 172.20 falls inside 172.16–172.31.",trap:"Not every 172.x address is private, only 172.16 to 172.31."},
- {id:"n6-06",t:"n6",d:"e",ty:"fill",q:"Write the subnet mask for /24 in dotted decimal.",a:["255.255.255.0"],tags:["subnet"],
+ {id:"n6-06",v:{k:"mask",cidr:24},t:"n6",d:"e",ty:"fill",q:"Write the subnet mask for /24 in dotted decimal.",a:["255.255.255.0"],tags:["subnet"],
   why:"/24 means 24 ones: 11111111.11111111.11111111.00000000 = 255.255.255.0.",trap:"Each group of 8 ones is 255."},
  {id:"n7-01",t:"n7",d:"e",ty:"mc",q:"Which of these is the largest WAN in the world?",o:["The UTT campus network","The internet","A home Wi-Fi network","A Bluetooth headset link"],a:1,
   why:"The internet is a huge WAN made of many connected networks spanning the whole planet.",trap:"A campus is a LAN (or MAN if spread across a city). Bluetooth is a PAN."},
@@ -600,8 +620,119 @@ const BANK = [
   why:"ipconfig shows the IP settings. ipconfig /all shows even more, like the MAC address and DNS servers.",trap:"ping tests whether another device replies; it doesn't show your own settings."},
  {id:"n9-03",t:"n9",d:"m",ty:"mc",q:"Which tool helps you find which cable at the patch panel goes to a wall jack?",o:["Crimper","Toner probe","Punch-down tool","Loopback plug"],a:1,
   why:"A toner sends a tone down the cable and the probe beeps when you touch the right one at the other end.",trap:"A crimper attaches RJ45 plugs; a punch-down tool seats wires into a patch panel."},
- {id:"n9-04",t:"n9",d:"e",ty:"mc",q:"Which port does DNS use?",o:["25","53","80","443"],a:1,tags:["port"],
+ {id:"n9-04",v:{k:"port",p:"DNS"},t:"n9",d:"e",ty:"mc",q:"Which port does DNS use?",o:["25","53","80","443"],a:1,tags:["port"],
   why:"DNS uses port 53. Memory aid: DNS turns names into numbers, and 53 is the number.",trap:"25 is SMTP (email sending), 80 is HTTP, 443 is HTTPS."},
+
+ {id:"n1-05",t:"n1",d:"e",ty:"match",q:"Match each network type to an example.",o:[["PAN","Phone and Bluetooth earbuds"],["LAN","One UTT computer lab"],["MAN","Offices linked across Port of Spain"],["WAN","The internet"]],
+  why:"Size is the key: PAN (around one person) < LAN (one site) < MAN (a city) < WAN (countries, the world).",trap:"Wi-Fi or cables doesn't decide the type; the geographic area does."},
+ {id:"n1-06",t:"n1",d:"m",ty:"mc",q:"Which access method does Wi-Fi use?",o:["CSMA/CD","CSMA/CA","Token passing","Polling"],a:1,
+  why:"Wireless devices can't detect a collision while sending, so 802.11 uses collision AVOIDANCE: CSMA/CA.",trap:"CSMA/CD (Detection) is for wired Ethernet."},
+ {id:"n1-07",t:"n1",d:"m",ty:"mc",q:"In which topology does one break in the main backbone cable bring down the whole network?",o:["Star","Bus","Mesh","Hybrid"],a:1,
+  why:"Every device shares the single bus cable, so a break (or a missing terminator) stops everything.",trap:"In a star, one broken cable only cuts off one device."},
+ {id:"n1-08",t:"n1",d:"e",ty:"mc",q:"A small home network has 3 laptops sharing files and a printer, with no dedicated server. What architecture is this?",o:["Client/server","Peer-to-peer","WAN","Mesh"],a:1,
+  why:"With no dedicated server, every computer can both share and use resources: peer-to-peer.",trap:"Client/server needs a dedicated server providing the services."},
+ {id:"n1-09",t:"n1",d:"h",ty:"fill",q:"How many links does a full mesh of 6 devices need?",a:["15"],
+  why:"n(n − 1) ÷ 2 = 6 × 5 ÷ 2 = 15.",trap:"Don't forget to divide by 2: each link joins two devices."},
+
+ {id:"n2-05",t:"n2",d:"e",ty:"order",q:"Put the OSI layers in order from layer 1 to layer 7.",o:["Physical","Data Link","Network","Transport","Session","Presentation","Application"],
+  why:"Please Do Not Throw Sausage Pizza Away: Physical, Data Link, Network, Transport, Session, Presentation, Application.",trap:"Layer 1 is the bottom (Physical), not Application."},
+ {id:"n2-06",t:"n2",d:"m",ty:"mc",q:"Which layer encrypts and formats data, for example as JPEG?",o:["Application","Presentation","Session","Transport"],a:1,
+  why:"Layer 6, Presentation, handles formatting, encryption and compression.",trap:"Application (7) is about the protocols apps use, like HTTP."},
+ {id:"n2-07",t:"n2",d:"m",ty:"mc",q:"Live video calls usually use UDP rather than TCP. Why?",o:["UDP is more reliable","UDP re-sends lost data","UDP is faster, and a late re-sent frame is useless anyway","UDP uses IP addresses"],a:2,
+  why:"UDP has less overhead and doesn't wait to re-send. In a live call, old data arriving late is worse than a tiny glitch.",trap:"TCP is the reliable one; UDP trades reliability for speed."},
+ {id:"n2-08",t:"n2",d:"e",ty:"tf",q:"De-encapsulation happens at the receiver as data moves UP the layers.",a:true,
+  why:"The receiver strips off each header on the way up: bits → frame → packet → segment → data.",trap:"Encapsulation (adding headers) happens at the sender, going down."},
+ {id:"n2-09",t:"n2",d:"m",ty:"mc",q:"Which TCP/IP layer matches OSI layer 3?",o:["Application","Transport","Internet","Network Access"],a:2,
+  why:"OSI layer 3 (Network, IP) = the TCP/IP Internet layer.",trap:"The TCP/IP 'Network Access' layer is OSI layers 1 and 2."},
+
+ {id:"n3-04",t:"n3",d:"m",ty:"order",q:"Put the T568B colours in order from pin 1 to pin 8.",o:["White/orange","Orange","White/green","Blue","White/blue","Green","White/brown","Brown"],
+  why:"T568B: wO, O, wG, B, wB, G, wBr, Br.",trap:"Green is split: white/green on pin 3, green on pin 6."},
+ {id:"n3-05",t:"n3",d:"e",ty:"mc",q:"Which cable type is NOT affected by electrical interference?",o:["UTP","STP","Coaxial","Fibre optic"],a:3,
+  why:"Fibre carries light, not electricity, so EMI can't affect it.",trap:"STP's shielding reduces interference, but it's still copper."},
+ {id:"n3-06",t:"n3",d:"m",ty:"mc",q:"Which connector is used for UTP Ethernet?",o:["RJ11","RJ45","F-type","LC"],a:1,
+  why:"Ethernet over UTP uses the 8-pin RJ45 connector.",trap:"RJ11 is the smaller phone connector; F-type is for coax; LC is fibre."},
+ {id:"n3-07",t:"n3",d:"m",ty:"mc",q:"Traditionally, which cable connects a switch to another switch?",o:["Straight-through","Crossover","Rollover","Coaxial"],a:1,
+  why:"Same type of device → crossover (T568A on one end, T568B on the other).",trap:"Auto-MDIX on modern switches often makes either work, but the exam rule is 'same = cross'."},
+ {id:"n3-08",t:"n3",d:"h",ty:"mc",q:"You need 10 Gbps over a full 100 m run. Which cable?",o:["Cat5e","Cat6","Cat6a","Cat3"],a:2,
+  why:"Cat6a supports 10GBASE-T to 100 m.",trap:"Cat6 only manages 10 Gbps up to 55 m."},
+ {id:"n3-09",t:"n3",d:"m",ty:"fill",q:"In structured cabling, what is the maximum length (in metres) of the horizontal cable in the wall?",a:["90","90m","90 m"],
+  why:"90 m of horizontal cable plus up to 10 m of patch cords keeps the total channel within 100 m.",trap:"100 m is the whole channel, not just the wall run."},
+
+ {id:"n4-03",t:"n4",d:"m",ty:"mc",q:"Which band gives longer range and goes through walls better?",o:["2.4 GHz","5 GHz","Both the same","Neither"],a:0,
+  why:"Lower frequencies travel further and pass through obstacles better.",trap:"5 GHz is faster but has shorter range."},
+ {id:"n4-04",t:"n4",d:"m",ty:"mc",q:"On 2.4 GHz, which three channels don't overlap?",o:["1, 2, 3","1, 6, 11","2, 7, 12","5, 10, 15"],a:1,
+  why:"2.4 GHz channels overlap their neighbours; 1, 6 and 11 are far enough apart.",trap:"Neighbouring routers on channels 1 and 3 interfere with each other."},
+ {id:"n4-05",t:"n4",d:"e",ty:"tf",q:"Hiding the SSID is enough to keep a Wi-Fi network secure.",a:false,
+  why:"Hidden SSIDs can still be found with free tools. Security comes from WPA2/WPA3 encryption and a strong passphrase.",trap:"MAC filtering is also weak, because MAC addresses can be spoofed."},
+ {id:"n4-06",t:"n4",d:"m",ty:"match",q:"Match each standard to its band.",o:[["802.11a","5 GHz"],["802.11b","2.4 GHz"],["802.11n","2.4 and 5 GHz"]],
+  why:"a = 5 GHz, b and g = 2.4 GHz, n = both.",trap:"802.11a is the older standard but uses 5 GHz."},
+ {id:"n4-07",t:"n4",d:"m",ty:"mc",q:"Which encryption does WPA2 use?",o:["RC4","TKIP","AES (CCMP)","None"],a:2,
+  why:"WPA2 uses AES with CCMP. WPA3 also uses AES, with SAE for the password exchange.",trap:"RC4 was WEP; TKIP was WPA."},
+
+ {id:"n5-03",t:"n5",d:"e",ty:"match",q:"Match each device to its OSI layer.",o:[["Hub","Layer 1"],["Switch","Layer 2"],["Router","Layer 3"]],
+  why:"Hub repeats bits (1), switch uses MAC addresses (2), router uses IP addresses (3).",trap:"Higher layer = smarter device."},
+ {id:"n5-04",t:"n5",d:"m",ty:"mc",q:"A switch receives a frame for a MAC address that isn't in its table yet. What does it do?",o:["Drops it","Floods it out of every other port","Sends it to the router","Sends it back"],a:1,
+  why:"Unknown destination → flood out of all ports except the one it came in on. It learns the address from the reply.",trap:"It only floods until it learns where that MAC address lives."},
+ {id:"n5-05",t:"n5",d:"m",ty:"mc",q:"Which device separates broadcast domains?",o:["Hub","Switch","Router","Repeater"],a:2,
+  why:"Routers don't forward broadcasts, so each router interface is its own broadcast domain.",trap:"A switch separates collision domains, not (by default) broadcast domains."},
+ {id:"n5-06",t:"n5",d:"e",ty:"tf",q:"A printer and an IP camera are both end devices.",a:true,
+  why:"End devices are where data starts or ends. Printers and cameras are hosts, just like PCs.",trap:"Switches, routers and access points are intermediary devices."},
+ {id:"n5-07",t:"n5",d:"e",ty:"mc",q:"Which device lets phones and laptops join the wired LAN without cables?",o:["Bridge","Wireless access point","Media converter","Hub"],a:1,
+  why:"A wireless access point connects Wi-Fi clients to the wired network.",trap:"A media converter changes cable type, e.g. fibre to copper."},
+
+ {id:"n6-07",t:"n6",d:"m",ty:"fill",q:"Convert 172 to an 8-bit binary number.",a:["10101100"],tags:["binary"],v:{k:"d2b",n:172},
+  why:"128 + 32 + 8 + 4 = 172, so the bits for 128, 32, 8 and 4 are 1: 10101100.",trap:"Always write all 8 bits, including leading zeros."},
+ {id:"n6-08",t:"n6",d:"m",ty:"fill",q:"Convert the binary octet 10101000 to decimal.",a:["168"],tags:["binary"],v:{k:"b2d",b:"10101000"},
+  why:"128 + 32 + 8 = 168.",trap:"Line the bits up under 128 64 32 16 8 4 2 1 before adding."},
+ {id:"n6-09",t:"n6",d:"m",ty:"mc",q:"What is the subnet mask for /27?",o:["255.255.255.192","255.255.255.224","255.255.255.240","255.255.255.248"],a:1,tags:["subnet"],v:{k:"mask",cidr:27},
+  why:"27 ones: three octets of 255, then 11100000 = 128 + 64 + 32 = 224.",trap:"/26 = .192, /27 = .224, /28 = .240."},
+ {id:"n6-10",t:"n6",d:"h",ty:"mc",q:"What is the network address of 192.168.5.100/26?",o:["192.168.5.0","192.168.5.64","192.168.5.96","192.168.5.128"],a:1,tags:["subnet"],v:{k:"net",ip:"192.168.5.100/26"},
+  why:"/26 → block size 64. Subnets start at 0, 64, 128, 192. 100 is in the .64 subnet.",trap:"The network address is a multiple of the block size."},
+ {id:"n6-11",t:"n6",d:"h",ty:"mc",q:"What is the LAST usable host in 10.0.5.130/25?",o:["10.0.5.254","10.0.5.255","10.0.5.127","10.0.5.129"],a:0,tags:["subnet"],v:{k:"last",ip:"10.0.5.130/25"},
+  why:"/25 → block size 128. 130 is in the .128 subnet (.128 to .255). Broadcast .255, so the last host is .254.",trap:".255 is the broadcast address, which can't be given to a host."},
+ {id:"n6-12",t:"n6",d:"m",ty:"mc",q:"How many usable hosts does a /28 subnet have?",o:["16","14","30","6"],a:1,tags:["subnet"],v:{k:"hosts",ip:"192.168.1.0/28"},
+  why:"32 − 28 = 4 host bits. 2⁴ − 2 = 14.",trap:"16 is the total number of addresses, including network and broadcast."},
+ {id:"n6-13",t:"n6",d:"h",ty:"mc",q:"What is the broadcast address of 172.16.4.37/29?",o:["172.16.4.39","172.16.4.40","172.16.4.47","172.16.4.255"],a:0,tags:["subnet"],v:{k:"bc",ip:"172.16.4.37/29"},
+  why:"/29 → block size 8. Subnets: .32, .40… 37 is in .32 to .39, so the broadcast is .39.",trap:".40 is the start of the NEXT subnet."},
+ {id:"n6-14",t:"n6",d:"m",ty:"mc",q:"Which of these is a PUBLIC IP address?",o:["10.4.2.1","192.168.0.10","172.32.1.5","172.20.0.1"],a:2,v:{k:"public",ip:"172.32.1.5"},
+  why:"Private class B only covers 172.16 to 172.31. 172.32.1.5 is outside it, so it's public.",trap:"Not every 172.x address is private."},
+ {id:"n6-15",t:"n6",d:"e",ty:"mc",q:"Which IP address class does 150.10.2.3 belong to?",o:["A","B","C","D"],a:1,v:{k:"class",ip:"150.10.2.3"},
+  why:"Class B is 128 to 191 in the first octet. 150 fits.",trap:"Class C starts at 192."},
+ {id:"n6-16",t:"n6",d:"e",ty:"order",q:"Put the four DHCP messages in order.",o:["Discover","Offer","Request","Acknowledge"],
+  why:"DORA: the client Discovers, the server Offers, the client Requests, the server Acknowledges.",trap:"The client speaks first (Discover) and the server has the last word (Acknowledge)."},
+ {id:"n6-17",t:"n6",d:"e",ty:"mc",q:"What does ping 127.0.0.1 test?",o:["The internet connection","The default gateway","The PC's own network software (loopback)","The DNS server"],a:2,
+  why:"127.0.0.1 is the loopback address: the PC talking to itself. It checks the TCP/IP stack works.",trap:"It never leaves the PC, so it doesn't test the cable or router."},
+
+ {id:"n7-02",t:"n7",d:"e",ty:"mc",q:"What usually connects a company's LAN to a WAN?",o:["A hub","A switch","A router","A repeater"],a:2,
+  why:"A router has LAN and WAN interfaces and forwards packets between the networks.",trap:"Switches connect devices inside a LAN."},
+ {id:"n7-03",t:"n7",d:"m",ty:"mc",q:"Which WAN connection sends internet over the same coaxial cable used for TV?",o:["DSL","Cable","Satellite","Leased line"],a:1,
+  why:"Cable internet uses the TV provider's coaxial network.",trap:"DSL uses telephone lines."},
+ {id:"n7-04",t:"n7",d:"m",ty:"mc",q:"What is the 'demarcation point'?",o:["The fastest part of the WAN","Where the customer's responsibility ends and the provider's begins","The provider's main office","A type of cable"],a:1,
+  why:"The demarc is the boundary: problems on your side are yours, beyond it they're the provider's.",trap:"The CPE is the equipment; the demarc is the boundary point."},
+ {id:"n7-05",t:"n7",d:"m",ty:"tf",q:"A VPN creates an encrypted tunnel across the public internet.",a:true,
+  why:"A VPN lets remote users or branches connect privately over the internet, without a leased line.",trap:"The internet itself isn't private; the VPN's encryption makes the connection private."},
+
+ {id:"n8-02",t:"n8",d:"m",ty:"mc",q:"Why should you use SSH instead of Telnet to manage a switch?",o:["SSH is faster","SSH encrypts the session, including the password","Telnet doesn't work on switches","SSH uses less power"],a:1,
+  why:"Telnet sends everything as plain text, so a password can be captured. SSH encrypts it.",trap:"SSH = port 22 (secure). Telnet = port 23 (plain text)."},
+ {id:"n8-03",t:"n8",d:"e",ty:"mc",q:"Which is a device hardening step?",o:["Leaving unused ports enabled","Disabling unused services","Keeping the default password","Turning on Telnet"],a:1,
+  why:"Every running service is a possible way in. Turn off what you don't use.",trap:"Hardening means fewer ways in, not more."},
+ {id:"n8-04",t:"n8",d:"e",ty:"match",q:"Match each threat to the protection.",o:[["Someone plugs into a spare wall jack","Disable unused switch ports"],["Default admin password published online","Change the default password"],["Someone walks into the equipment room","Locked room with key-card access"],["Known security bug in the router","Update the firmware"]],
+  why:"Each protection closes a specific way in.",trap:"Physical problems need physical solutions (locks, cards)."},
+ {id:"n8-05",t:"n8",d:"m",ty:"tf",q:"If someone can physically reach a router, they may be able to reset it and bypass its passwords.",a:true,
+  why:"The console port or reset button can wipe the configuration, which is why physical security matters.",trap:"Strong passwords don't help if the room isn't locked."},
+
+ {id:"n9-05",t:"n9",d:"m",ty:"mc",q:"A PC can ping 8.8.8.8 but can't open google.com. What's the most likely problem?",o:["Unplugged cable","DNS","No IP address","Broken switch"],a:1,
+  why:"Reaching an IP address proves the connection works. Failing only by name points to DNS.",trap:"An unplugged cable would stop the ping too."},
+ {id:"n9-06",t:"n9",d:"e",ty:"mc",q:"Which command shows every router (hop) on the path to a website?",o:["ping","ipconfig","tracert","netstat"],a:2,
+  why:"tracert (traceroute on Linux) lists each hop and how long it takes.",trap:"ping only tells you if the destination answers."},
+ {id:"n9-07",t:"n9",d:"m",ty:"mc",q:"After fixing the problem, what is the LAST step of the troubleshooting methodology?",o:["Test the theory","Verify full functionality","Document findings, actions and outcomes","Identify the problem"],a:2,
+  why:"Documenting is the final step, so the next person can learn from it.",trap:"Verify comes just before Document."},
+ {id:"n9-08",t:"n9",d:"m",ty:"mc",q:"A cable tester shows lights 1, 2, 3, 6 and 8 but not 4, 5 and 7. What's wrong?",o:["Nothing","Some wires aren't making contact in the plug","The switch is off","It's a crossover cable"],a:1,
+  why:"Each light is one wire. Missing lights mean those wires aren't connected, usually not pushed fully into the RJ45.",trap:"Re-terminate the plug: cut it off, re-arrange and crimp again."},
+ {id:"n9-09",t:"n9",d:"e",ty:"mc",q:"Which port does HTTPS use?",o:["80","443","22","25"],a:1,tags:["port"],v:{k:"port",p:"HTTPS"},
+  why:"HTTPS = 443. HTTP (not secure) = 80.",trap:"22 is SSH and 25 is SMTP."},
+ {id:"n9-10",t:"n9",d:"m",ty:"mc",q:"Which port does SSH use?",o:["21","22","23","25"],a:1,tags:["port"],v:{k:"port",p:"SSH"},
+  why:"SSH = 22. Telnet = 23 (insecure).",trap:"FTP is 20/21."},
 
  /* ---------- LOGC ---------- */
  {id:"l1-01",t:"l1",d:"e",ty:"mc",q:"In which stage of the program development life cycle do you draw the flowchart?",o:["Analysis","Design","Coding","Testing"],a:1,
@@ -1185,6 +1316,298 @@ l7: [
    why:"The loop's last job is to **read the next price**, so the `while` test can check it straight away. total = 0 goes before the loop and print(total) after it."}}
 ]
 };
+
+/* =================== PICTURE LESSONS: NTWK1007 =================== */
+const NET_STAR = {k:"net", h:215, title:"Star", n:[["sw","🔀","Switch",170,100],["a","💻","PC",50,40],["b","💻","PC",290,40],["c","🖨️","Printer",50,160],["d","💻","PC",290,160],["e","🖥️","Server",170,25]], l:[["sw","a"],["sw","b"],["sw","c"],["sw","d"],["sw","e"]]};
+const NET_BUS = {k:"net", h:185, title:"Bus", n:[["t1",".","",20,90],["p1",".","",80,90],["p2",".","",170,90],["p3",".","",260,90],["t2",".","",320,90],["a","💻","PC",80,30],["b","💻","PC",170,140],["c","💻","PC",260,30]], l:[["t1","t2"],["p1","a"],["p2","b"],["p3","c"]], cap:"One backbone cable, with a **terminator** at each end"};
+const NET_RING = {k:"net", h:210, title:"Ring", ring:[170,100,110,70], n:[["a","💻","",170,30],["b","💻","",275,80],["c","💻","",240,160],["d","💻","",100,160],["e","💻","",65,80]], l:[], cap:"Each device connects to the next, in a circle"};
+const NET_MESH = {k:"net", h:200, title:"Full mesh", n:[["a","🏢","",70,40],["b","🏢","",270,40],["c","🏢","",70,160],["d","🏢","",270,160]], l:[["a","b"],["a","c"],["a","d"],["b","c"],["b","d"],["c","d"]], cap:"Every device links to every other: n(n − 1)/2 links. 4 devices → 6 links"};
+const OSI_ROWS = [[7,"Application","HTTP, DNS, email: what the user's apps use"],[6,"Presentation","format, encrypt, compress"],[5,"Session","open, manage, close conversations"],[4,"Transport","TCP/UDP, ports, segments"],[3,"Network","IP addresses, routers, packets"],[2,"Data Link","MAC addresses, switches, frames"],[1,"Physical","cables, signals, bits"]];
+
+Object.assign(LESSONS, {
+/* ------------------------------------------------------------------ n1 */
+n1: [
+ {tag:"every", h:"One printer, one Wi-Fi, the whole family",
+  p:["At home everyone prints on the same printer, uses the same Wi-Fi and watches shows from the same internet connection. Nobody needs their own printer.","That's what a **network** is for: connecting devices so they can **share resources**."],
+  vis:{k:"net", h:215, n:[["r","📶","Router",170,95],["i","🌐","Internet",170,22],["a","💻","Laptop",50,160],["b","📱","Phone",140,170],["c","🖨️","Printer",220,170],["d","📺","Smart TV",300,150]], l:[["r","i"],["r","a","dash"],["r","b","dash"],["r","c"],["r","d","dash"]], cap:"Dashed lines are wireless links"}},
+ {tag:"def", h:"What makes up a network",
+  p:["A **network** is two or more devices connected so they can communicate and share resources (files, printers, the internet, applications)."],
+  vis:{k:"table", h:["Component","Job","Examples"], rows:[["**End devices** (hosts)","Where data starts or ends","PC, laptop, phone, printer, server"],["**Intermediary devices**","Move data between hosts","Switch, router, access point"],["**Media**","The path the signal travels","UTP cable, fibre, radio waves (Wi-Fi)"],["**Protocols**","The rules both sides follow","Ethernet, IP, TCP, HTTP"]]}},
+ {tag:"def", h:"Classifying networks by size (geography)",
+  vis:{k:"table", h:["Type","Covers","T&T example"], rows:[["**PAN**: personal area","A few metres around one person","Phone and Bluetooth earbuds"],["**LAN**: local area","One room, floor or building","A UTT computer lab"],["**CAN**: campus area","Several buildings on one site","All the buildings on a UTT campus"],["**MAN**: metropolitan area","A city","Offices linked across Port of Spain"],["**WAN**: wide area","Countries, the world","A bank linking branches from Point Fortin to Tobago; the internet"]]},
+  tricky:"Size is the key. A LAN is usually owned by one organisation; a WAN normally uses lines leased from a provider."},
+ {tag:"def", h:"Topologies: the star",
+  p:["A **topology** is the layout of a network. In a **star**, every device has its own cable to a central switch."],
+  vis:NET_STAR,
+  after:"✅ One broken cable only affects one PC, and it's easy to add devices. ❌ If the central switch fails, everything stops. Star is what you'll find in almost every modern LAN."},
+ {tag:"def", h:"The bus and the ring",
+  vis:NET_BUS, vis2:NET_RING,
+  after:"**Bus**: cheap, but one break in the backbone brings down the whole network. **Ring**: data travels around in one direction; one break can stop the ring (unless it's a dual ring)."},
+ {tag:"def", h:"The mesh",
+  vis:NET_MESH,
+  after:"✅ Very reliable: if one link fails there's another path. ❌ Lots of cables and ports, so it's expensive. Used for links between important routers and the internet's backbone. A **hybrid** topology mixes types, like several stars joined together."},
+ {tag:"def", h:"Access methods: who gets to talk?",
+  p:["Think of a lime where everyone talks at once: nobody hears anything. Networks need rules for taking turns, called **access methods**."],
+  vis:{k:"table", h:["Method","How it works","Used by"], rows:[["**CSMA/CD**","Listen first; if two send at once there's a **collision**, both stop and wait a random time","Wired Ethernet (older, half-duplex)"],["**CSMA/CA**","Listen first and try to **avoid** collisions before sending","Wi-Fi (802.11)"],["**Token passing**","Only the device holding the 'token' may send","Token Ring (older ring networks)"]]},
+  tricky:"**CD** = collision **Detection** (wired). **CA** = collision **Avoidance** (wireless, because radios can't hear a collision while they're sending)."},
+ {tag:"def", h:"Peer-to-peer or client/server?",
+  vis:{k:"compare", cols:[{h:"Peer-to-peer",items:["No dedicated server","Every PC shares and uses resources","Cheap and easy to set up","Hard to manage and secure; best for under about 10 PCs","Example: a small home network"]},{h:"Client/server",items:["Dedicated servers provide services","Clients request, servers respond","Central logins, backups and security","Costs more and needs an administrator","Example: UTT logins, email, the LMS"]}]}},
+ {tag:"tricky", h:"Physical vs logical topology",
+  p:["The **physical** topology is how the cables are laid out. The **logical** topology is how the data actually flows.","A network wired as a star around an old **hub** is physically a star, but logically a **bus**: the hub repeats every signal to every port, just like a shared cable."]},
+ {tag:"mist", h:"Common mistakes",
+  mist:[["'A LAN is any network with cables'","LAN is about size (one site), not cables. Wi-Fi at home is still a LAN.","Classify by geographic area: PAN, LAN, CAN, MAN, WAN."],
+   ["Saying a star fails when one cable breaks","Only the device on that cable is cut off.","The weak point of a star is the central device."],
+   ["Mixing up CSMA/CD and CSMA/CA","They're for different media.","Wired = Detection. Wireless = Avoidance."]]},
+ {tag:"check", h:"Quick check",
+  check:{q:"A full mesh has 5 routers. How many links does it need?", o:["5","10","20","25"], a:1,
+   why:"Links = n(n − 1) ÷ 2 = 5 × 4 ÷ 2 = **10**."}}
+],
+/* ------------------------------------------------------------------ n2 */
+n2: [
+ {tag:"every", h:"Sending a barrel home",
+  p:["Your aunt in New York packs a barrel for the family in Trinidad. She packs the goods, seals it, labels it with the address, and the shipping company loads it in a container on a ship.","In Trinidad it all happens **in reverse**: off the ship, out of the container, check the label, open the barrel. Network data travels exactly like this, wrapped in layers."],
+  vis:{k:"steps", items:[["🎁","Goods (the data)"],["🛢️","Barrel + label"],["📦","Container"],["🚢","On the ship (signals on the wire)"]]}},
+ {tag:"def", h:"The OSI model: 7 layers",
+  p:["The **OSI model** splits network communication into 7 layers, each with one job. Layer 7 is nearest the user; layer 1 is the cable."],
+  vis:{k:"layers", rows:OSI_ROWS},
+  tricky:"From layer 1 up: **P**lease **D**o **N**ot **T**hrow **S**ausage **P**izza **A**way = Physical, Data Link, Network, Transport, Session, Presentation, Application."},
+ {tag:"def", h:"What lives at each layer",
+  vis:{k:"table", h:["Layer","PDU (unit of data)","Address / example","Device"], rows:[["7–5 Application, Presentation, Session","Data","HTTP, DNS, JPEG, encryption","–"],["4 Transport","**Segment**","Port numbers, TCP, UDP","–"],["3 Network","**Packet**","IP address","Router"],["2 Data Link","**Frame**","MAC address","Switch, bridge"],["1 Physical","**Bits**","Voltages, light, radio","Hub, cable, repeater"]]}},
+ {tag:"def", h:"Encapsulation: wrapping on the way down",
+  p:["As data goes **down** the layers on the sender, each layer adds its own **header** (layer 2 also adds a trailer). This is **encapsulation**."],
+  vis:{k:"steps", items:[["📄","**Data**: the web page request"],["🔢","**Segment**: + TCP header (port numbers)"],["🏷️","**Packet**: + IP header (IP addresses)"],["🧾","**Frame**: + Ethernet header (MAC addresses) and trailer (error check)"],["⚡","**Bits**: sent as signals on the cable"]]},
+  after:"At the receiver the headers are removed going **up** the layers: **de-encapsulation**."},
+ {tag:"ex", h:"Worked example: opening a web page",
+  p:["Suri types a web address on a UTT lab PC. Follow it down the sender's layers:"],
+  vis:{k:"table", h:["Layer","What happens"], rows:[["7 Application","The browser makes an **HTTPS** request"],["6 Presentation","The data is **encrypted** (TLS)"],["5 Session","A session with the web server is kept open"],["4 Transport","**TCP** adds port **443** for HTTPS"],["3 Network","**IP** adds the PC's and the server's IP addresses"],["2 Data Link","**Ethernet** adds MAC addresses for the next hop (the default gateway)"],["1 Physical","Bits go out as electrical signals on the UTP cable"]]}},
+ {tag:"def", h:"OSI vs TCP/IP",
+  p:["The **TCP/IP model** is the one the internet actually uses. It has **4 layers** and groups some OSI layers together."],
+  vis:{k:"table", h:["OSI (7)","TCP/IP (4)"], rows:[["7 Application · 6 Presentation · 5 Session","**Application**"],["4 Transport","**Transport**"],["3 Network","**Internet**"],["2 Data Link · 1 Physical","**Network Access** (also called Link)"]]},
+  after:"OSI is a **reference** model for learning and troubleshooting. TCP/IP is the **working** model the protocols are built on."},
+ {tag:"key", h:"TCP vs UDP (layer 4)",
+  vis:{k:"compare", cols:[{h:"TCP",items:["Connection-oriented: three-way handshake first","Reliable: lost segments are re-sent, in order","Slower, more overhead","Web pages, email, file downloads"]},{h:"UDP",items:["Connectionless: just sends","No guarantee of delivery or order","Fast, low overhead","Live video, voice calls, online games, DNS lookups"]}]}},
+ {tag:"tricky", h:"Count the layers from the bottom",
+  p:["Layer **1** is Physical (the bottom), layer **7** is Application (the top). 'Layer 3 device' means a router, 'layer 2 device' a switch."],
+  tricky:"Don't confuse the **Application layer** with the application itself. The browser isn't the layer; the **protocols** it uses (HTTP, DNS) are."},
+ {tag:"mist", h:"Common mistakes",
+  mist:[["Putting the layers upside down","Exams number them from the bottom.","1 Physical … 7 Application. Use the pizza mnemonic."],
+   ["Packets at layer 2","Layer 2 PDUs are frames.","Segment (4) → Packet (3) → Frame (2) → Bits (1)."],
+   ["Saying TCP/IP has 7 layers","That's OSI.","TCP/IP has 4: Application, Transport, Internet, Network Access."]]},
+ {tag:"check", h:"Quick check",
+  check:{q:"Which layer adds the MAC addresses during encapsulation?", o:["Layer 4 – Transport","Layer 3 – Network","Layer 2 – Data Link","Layer 1 – Physical"], a:2,
+   why:"MAC addresses go in the **frame** header, added at **layer 2, Data Link**. IP addresses are layer 3; ports are layer 4."}}
+],
+/* ------------------------------------------------------------------ n3 */
+n3: [
+ {tag:"every", h:"Cables are like roads",
+  p:["A highway carries more traffic, faster, than a country road. A road can only go so far before you need a rest stop.","Network cables are the same: each type has a **speed** (bandwidth), a **maximum distance**, and its own **connector**."],
+  vis:{k:"scene", e:"🛣️", items:[["Bandwidth","How much data per second (like lanes on a road)"],["Distance limit","How far before the signal gets too weak"],["Connector","The plug on the end"]]}},
+ {tag:"def", h:"IEEE 802.3: the Ethernet standards",
+  p:["**IEEE 802.3** is the family of standards for wired **Ethernet**. The names tell you what they are: speed + BASE (baseband) + medium."],
+  vis:{k:"table", h:["Standard","Speed","Cable","Max distance"], rows:[["10BASE-T","10 Mbps","Cat3 UTP and up","100 m"],["100BASE-TX (Fast Ethernet)","100 Mbps","Cat5 UTP and up","100 m"],["1000BASE-T (Gigabit)","1 Gbps","Cat5e UTP and up","100 m"],["10GBASE-T","10 Gbps","Cat6a (or Cat6 up to 55 m)","100 m"]]},
+  after:"**T** = twisted pair. Fibre versions end in letters like SX, LX or SR."},
+ {tag:"def", h:"The main cable types",
+  vis:{k:"table", h:["Media","Good for","Distance","Connector"], rows:[["**UTP** twisted pair (Cat5e, Cat6, Cat6a)","Most LANs; cheap and easy","100 m","**RJ45**"],["**Coaxial** (RG-6)","Cable TV and cable internet","Hundreds of metres","**F-type**"],["**Multimode fibre**","Inside buildings and campuses","Hundreds of metres","**LC, SC, ST**"],["**Single-mode fibre**","Long links between buildings and towns","Many kilometres","**LC, SC**"]]},
+  tricky:"Fibre uses **light**, so it ignores electrical interference (EMI) and can't be tapped easily. UTP's twists help it resist interference, but it's still copper."},
+ {tag:"def", h:"T568A and T568B",
+  p:["Inside a UTP cable are **8 wires** in 4 coloured pairs. **T568A** and **T568B** are the two standard orders for putting them into an RJ45 plug."],
+  vis:{k:"pins", std:"AB", cap:"The only difference: the **orange** and **green** pairs swap places (pins 1-2 and 3-6)."}},
+ {tag:"def", h:"Straight-through or crossover?",
+  vis:{k:"table", h:["Cable","Ends","Traditionally connects"], rows:[["**Straight-through**","Same standard both ends (B–B)","**Different** devices: PC → switch, switch → router"],["**Crossover**","T568A one end, T568B the other","**Same** type of device: switch → switch, PC → PC"]]},
+  tricky:"Most modern ports have **Auto-MDIX**: they detect the cable and adjust, so a straight-through often works everywhere. Exams still ask the traditional rule: **different = straight, same = cross**."},
+ {tag:"ex", h:"Worked example: making a patch cable",
+  vis:{k:"steps", items:[["✂️","Strip about 2–3 cm of the outer jacket; don't nick the wires"],["🌀","Untwist the pairs and straighten them"],["🎨","Arrange in **T568B** order: white/orange, orange, white/green, blue, white/blue, green, white/brown, brown"],["📏","Trim the ends straight, about 1.25 cm long"],["🔌","Hold the RJ45 with the clip facing away from you: pin 1 is on the left. Push the wires all the way in"],["🔧","Crimp with the crimper, with the jacket inside the plug"],["✅","Repeat at the other end, then test with a **cable tester**: lights 1 to 8 should come on in order"]]}},
+ {tag:"def", h:"Network media layout (structured cabling)",
+  vis:{k:"net", w:340, h:150, n:[["pc","💻","PC",30,60],["j","🔌","Wall jack",110,60],["pp","🗄️","Patch panel",220,60],["sw","🔀","Switch",310,60]], l:[["pc","j"],["j","pp"],["pp","sw"]], cap:"Patch cord → **horizontal cable in the wall (max 90 m)** → patch panel → patch cord to the switch"},
+  after:"The whole run from switch to PC must stay within **100 m**: 90 m in the wall plus up to 10 m of patch cords. The patch panel and switch live in a locked **telecommunications room** or rack."},
+ {tag:"tricky", h:"The 100 m rule includes the patch cords",
+  p:["The 100 m limit is for the **whole channel**, end to end, not just the cable in the wall."],
+  tricky:"Cat6 only reaches **10 Gbps** up to **55 m**. For 10 Gbps over the full 100 m you need **Cat6a**."},
+ {tag:"mist", h:"Common mistakes",
+  mist:[["Not pushing the wires to the end of the plug","Some pins don't make contact; the tester shows missing lights.","Look at the tip: all 8 copper ends should touch the front."],
+   ["Untwisting too much","Long untwisted wires pick up interference (crosstalk).","Keep untwisted ends to about 1.25 cm."],
+   ["Using RJ11 for Ethernet","RJ11 is the smaller phone connector (4–6 pins).","Ethernet uses the 8-pin **RJ45**."]]},
+ {tag:"check", h:"Quick check",
+  check:{q:"In T568B, which colour goes in pin 2?", o:["White/orange","Orange","Green","Blue"], a:1,
+   why:"T568B: 1 white/orange, **2 orange**, 3 white/green, 4 blue, 5 white/blue, 6 green, 7 white/brown, 8 brown."}}
+],
+/* ------------------------------------------------------------------ n4 */
+n4: [
+ {tag:"every", h:"Radio stations on different channels",
+  p:["Your car radio picks one station by its frequency. Wi-Fi works the same way, with radio waves on two main bands.","**2.4 GHz** is like a long country road that's always crowded: it reaches far, but it's busy. **5 GHz** is a fast new highway with more lanes, but it doesn't go as far."],
+  vis:{k:"compare", cols:[{h:"2.4 GHz",items:["Longer range, better through walls","Slower","Crowded: microwaves, Bluetooth, neighbours","Only 3 non-overlapping channels: 1, 6, 11"]},{h:"5 GHz",items:["Shorter range","Faster","Less interference","Many more channels"]}]}},
+ {tag:"def", h:"The IEEE 802.11 standards",
+  p:["**IEEE 802.11** is the family of Wi-Fi standards. Speeds are the maximum in theory; real speeds are lower."],
+  vis:{k:"table", h:["Standard","Wi-Fi name","Band","Max speed"], rows:[["802.11a","–","5 GHz","54 Mbps"],["802.11b","–","2.4 GHz","11 Mbps"],["802.11g","–","2.4 GHz","54 Mbps"],["802.11n","Wi-Fi 4","2.4 and 5 GHz","600 Mbps"],["802.11ac","Wi-Fi 5","5 GHz","about 3.5 Gbps"],["802.11ax","Wi-Fi 6 / 6E","2.4 and 5 GHz (6E adds 6 GHz)","about 9.6 Gbps"]]},
+  tricky:"Odd one out: **802.11a** is old but uses **5 GHz**. **b** and **g** are 2.4 GHz only. Memory aid: 'a' came with the 'faraway-numbered' 5."},
+ {tag:"def", h:"Wireless security",
+  p:["Anyone nearby can pick up Wi-Fi signals, so the data must be **encrypted**."],
+  vis:{k:"table", h:["Security","Encryption","Verdict"], rows:[["**WEP**","RC4 (weak)","❌ Broken: can be cracked in minutes"],["**WPA**","TKIP","❌ Outdated stop-gap"],["**WPA2**","AES (CCMP)","✅ Good: the minimum to use"],["**WPA3**","AES, with SAE for passwords","✅ Best: newest and strongest"]]},
+  after:"**Personal** mode uses one shared passphrase (home). **Enterprise** mode gives each user their own login through a RADIUS server (UTT, companies)."},
+ {tag:"ex", h:"Worked example: securing a new home router",
+  vis:{k:"steps", items:[["🔑","Change the router's **admin** password (not just the Wi-Fi password)"],["🛡️","Choose **WPA3** (or WPA2-AES if older devices need it)"],["🔤","Set a long Wi-Fi passphrase: 12+ characters, not the family's names or phone number"],["📛","Rename the SSID so it doesn't give away the router model or your address"],["⬆️","Update the **firmware**"],["🚫","Turn off **WPS** (the push-button/PIN setup), which can be attacked"]]}},
+ {tag:"tricky", h:"Hiding the SSID isn't security",
+  p:["Hiding the network name or allowing only certain MAC addresses (**MAC filtering**) sounds safe, but tools can see hidden SSIDs, and MAC addresses can be copied (spoofed)."],
+  tricky:"Real protection comes from **strong encryption (WPA2/WPA3) plus a strong passphrase**."},
+ {tag:"mist", h:"Common mistakes",
+  mist:[["'802.11a is 2.4 GHz because it's the first letter'","802.11a uses 5 GHz.","a = 5 GHz; b and g = 2.4 GHz; n = both; ac = 5 GHz; ax = both (6E adds 6 GHz)."],
+   ["Thinking 5 GHz always wins","It's faster but has shorter range and goes through walls less well.","Far away or through walls → 2.4 GHz. Close and fast → 5 GHz."],
+   ["Choosing WEP because it's 'still encryption'","WEP can be cracked in minutes.","Use WPA3, or WPA2 with AES."]]},
+ {tag:"check", h:"Quick check",
+  check:{q:"Which Wi-Fi standard is also called Wi-Fi 6?", o:["802.11n","802.11ac","802.11ax","802.11g"], a:2,
+   why:"**802.11ax = Wi-Fi 6** (6E adds the 6 GHz band). 802.11n is Wi-Fi 4 and 802.11ac is Wi-Fi 5."}}
+],
+/* ------------------------------------------------------------------ n5 */
+n5: [
+ {tag:"every", h:"Shouting, a postman and customs",
+  vis:{k:"steps", items:[["📢","A **hub** is like shouting in a maxi taxi: everyone hears every message"],["📮","A **switch** is a postman: it reads the name on the envelope and delivers to that one door"],["🛂","A **router** is customs at the border: it moves traffic **between** different networks and picks the route"]]}},
+ {tag:"def", h:"The main network devices",
+  vis:{k:"table", h:["Device","OSI layer","What it does","Uses"], rows:[["**Hub**","1","Repeats every signal out of every port","–"],["**Switch**","2","Sends each frame only to the port of the destination","MAC addresses"],["**Bridge**","2","Joins two LAN segments and filters traffic between them","MAC addresses"],["**Router**","3","Connects **different networks** and forwards packets on the best path","IP addresses"],["**Wireless access point**","2","Connects Wi-Fi devices to the wired network","MAC addresses"],["**Media converter**","1","Converts between media, e.g. fibre ↔ copper","–"]]}},
+ {tag:"def", h:"A small office network",
+  vis:{k:"net", h:245, n:[["i","🌐","Internet",170,20],["r","🛂","Router",170,80],["sw","🔀","Switch",170,145],["ap","📶","Access point",300,145],["a","💻","PC",40,200],["b","💻","PC",120,205],["c","🖨️","Printer",220,205],["ph","📱","Phone",300,205]], l:[["i","r"],["r","sw"],["sw","a"],["sw","b"],["sw","c"],["sw","ap"],["ap","ph","dash"]]},
+  after:"The **switch** connects devices inside the LAN. The **router** connects the LAN to the internet (another network). The **access point** adds wireless."},
+ {tag:"def", h:"How a switch learns",
+  p:["A switch builds a **MAC address table**. Every time a frame arrives, it notes the **source** MAC address and the port it came in on. Then it looks up the **destination** MAC and sends the frame only out of that port.","If it doesn't know the destination yet, it **floods** the frame out of every other port, just once."],
+  vis:{k:"table", h:["Port","MAC address learned"], rows:[["1","AA-11-22-33-44-01"],["2","AA-11-22-33-44-02"],["5","AA-11-22-33-44-05"]]},
+  tricky:"Each switch port is its own **collision domain**. A router port separates **broadcast domains**: broadcasts don't pass through a router."},
+ {tag:"def", h:"End devices",
+  p:["**End devices** (hosts) are where data starts or finishes: PCs, laptops, phones, tablets, printers, servers, IP cameras, smart TVs, IP phones.","Everything in between that just passes data along (switches, routers, access points) is an **intermediary device**."]},
+ {tag:"tricky", h:"Your home 'router' is four devices in one box",
+  p:["The box from your internet provider is usually a **modem** (talks to the provider's line), a **router**, a small **switch** (the LAN ports) and a **wireless access point**, all combined."],
+  tricky:"In exam answers, describe each **function** separately, even if one box does them all."},
+ {tag:"mist", h:"Common mistakes",
+  mist:[["'A switch uses IP addresses'","A (basic) switch forwards frames by MAC address.","Switch = layer 2 = MAC. Router = layer 3 = IP."],
+   ["'Hubs and switches are the same'","A hub sends to every port; a switch sends only to the right one.","Hubs waste bandwidth and cause collisions; switches don't."],
+   ["Using a router to join fibre to copper","That's a media converter's job.","Media converter = change the cable type."]]},
+ {tag:"check", h:"Quick check",
+  check:{q:"Which device connects the UTT network to the internet and chooses the path for each packet?", o:["Hub","Switch","Router","Media converter"], a:2,
+   why:"Joining **different networks** and choosing the path by **IP address** is the **router's** job (layer 3)."}}
+],
+/* ------------------------------------------------------------------ n6 */
+n6: [
+ {tag:"every", h:"An address has a street and a house number",
+  p:["A mailing address like *14 Frederick Street, Port of Spain* has a part everyone on the street shares, and a part that's just for one house.","An **IP address** is the same: a **network** part shared by everyone on that network, and a **host** part that identifies one device."],
+  vis:{k:"scene", e:"🏘️", items:[["Network part","Like the street: same for every device on the LAN"],["Host part","Like the house number: unique to each device"],["Subnet mask","Shows where the street ends and the house number begins"]]}},
+ {tag:"def", h:"IPv4 addresses",
+  p:["An IPv4 address is **32 bits**, written as **4 octets** (8 bits each) in **dotted decimal**, e.g. `192.168.1.10`. Each octet is 0 to 255.","The **subnet mask** (e.g. `255.255.255.0`, or **/24**) marks which bits are network (the 1s) and which are host (the 0s)."],
+  vis:{k:"ip", ip:"192.168.1.10", cidr:24}},
+ {tag:"def", h:"Binary: the place values",
+  p:["Each octet has 8 bits with these place values. Add the values where the bit is 1."],
+  vis:{k:"bin", n:192}},
+ {tag:"ex", h:"Worked example: 172 to binary",
+  p:["Go left to right. If the place value fits into what's left, write 1 and subtract it; otherwise write 0.","172: 128 fits (44 left) → 1. 64 doesn't → 0. 32 fits (12 left) → 1. 16 no → 0. 8 fits (4 left) → 1. 4 fits (0 left) → 1. 2 no → 0. 1 no → 0."],
+  vis:{k:"bin", n:172}},
+ {tag:"def", h:"Address classes and special ranges",
+  vis:{k:"table", h:["Class","First octet","Default mask","Private range"], rows:[["A","1 – 126","/8 (255.0.0.0)","10.0.0.0 – 10.255.255.255"],["B","128 – 191","/16 (255.255.0.0)","172.16.0.0 – 172.31.255.255"],["C","192 – 223","/24 (255.255.255.0)","192.168.0.0 – 192.168.255.255"],["D","224 – 239","–","Multicast"],["E","240 – 255","–","Experimental"]]},
+  after:"**127.x.x.x** is **loopback** (127.0.0.1 = this computer). **169.254.x.x** is **APIPA**. **Private** addresses are used inside LANs and aren't routed on the internet."},
+ {tag:"def", h:"How a device gets its address",
+  p:["**Static**: typed in by hand. Used for servers, printers and routers that must never change.","**DHCP**: handed out automatically by a DHCP server, in four steps (**DORA**):"],
+  vis:{k:"steps", items:[["📣","**D**iscover: the PC broadcasts 'Is there a DHCP server?'"],["🎁","**O**ffer: the server offers an address"],["🙋","**R**equest: the PC asks for that address"],["✅","**A**cknowledge: the server confirms; the PC gets the IP, mask, gateway and DNS"]]},
+  after:"**APIPA**: if no DHCP server answers, Windows gives itself a **169.254.x.x** address. It can only talk to other APIPA devices, so no internet."},
+ {tag:"def", h:"Subnet masks and CIDR",
+  vis:{k:"table", h:["CIDR","Mask","Host bits","Usable hosts"], rows:[["/24","255.255.255.0","8","254"],["/25","255.255.255.128","7","126"],["/26","255.255.255.192","6","62"],["/27","255.255.255.224","5","30"],["/28","255.255.255.240","4","14"],["/29","255.255.255.248","3","6"],["/30","255.255.255.252","2","2"]]},
+  after:"Usable hosts = **2ⁿ − 2**, where n is the number of host bits. You lose 2: the **network address** (all host bits 0) and the **broadcast address** (all host bits 1)."},
+ {tag:"def", h:"Why subnet?",
+  p:["**Subnetting** splits one big network into smaller ones. Think of UTT giving the labs, the staff and the Wi-Fi each their own subnet."],
+  vis:{k:"steps", items:[["📉","Smaller **broadcast domains**, so less broadcast traffic"],["🔒","**Security**: control what can pass between subnets"],["🗂️","**Organisation**: easier to manage and troubleshoot"],["♻️","Less **wasted** addresses"]]}},
+ {tag:"ex", h:"Worked example: 192.168.1.70/27",
+  p:["1. /27 leaves **5 host bits**, so each subnet has 2⁵ = **32** addresses (the block size).","2. Subnets go up in 32s: 0, 32, **64**, 96… 70 falls in the one that starts at **64**.","3. Network = .64. The next subnet starts at .96, so broadcast = **.95**. Hosts are .65 to .94: **30** usable."],
+  vis:{k:"ip", ip:"192.168.1.70", cidr:27}},
+ {tag:"key", h:"The quick 'block size' method",
+  vis:{k:"steps", items:[["1️⃣","Find the interesting octet of the mask (not 255 or 0)"],["2️⃣","Block size = **256 − that number** (e.g. 256 − 224 = 32)"],["3️⃣","Network address = the multiple of the block size at or below the address"],["4️⃣","Broadcast = next network address − 1"],["5️⃣","Usable hosts = everything in between"]]},
+  vis2:{k:"ip", ip:"10.0.5.130", cidr:25}},
+ {tag:"tricky", h:"Watch the edges",
+  p:["The **network** and **broadcast** addresses can't be given to a device. That's why /24 has 256 addresses but only **254** usable hosts."],
+  tricky:"Private class B is only **172.16 to 172.31**. 172.32.0.1 is a **public** address!"},
+ {tag:"mist", h:"Common mistakes",
+  mist:[["Forgetting the −2","/26 has 64 addresses, but only 62 usable.","Usable hosts = 2ⁿ − 2."],
+   ["Using 2ⁿ with the network bits","For /27 it's the **host** bits (32 − 27 = 5) that count.","Host bits = 32 − prefix."],
+   ["Thinking 169.254.x.x is a working address","It's APIPA: DHCP failed.","Check the DHCP server, the cable and the link, then `ipconfig /renew`."]]},
+ {tag:"check", h:"Quick check",
+  check:{q:"What is the network address of 192.168.5.100/26?", o:["192.168.5.0","192.168.5.64","192.168.5.96","192.168.5.128"], a:1,
+   why:"/26 → block size 256 − 192 = **64**. Subnets start at 0, 64, 128… 100 is in the one starting at **.64**."}}
+],
+/* ------------------------------------------------------------------ n7 */
+n7: [
+ {tag:"every", h:"Your yard and the highway",
+  p:["Your home LAN is like your own yard: you own it and control it. To get to San Fernando or Scarborough, you use **highways and the ferry** that someone else builds and runs.","A **WAN** is that highway system for data: it connects LANs that are far apart, usually over lines rented from a provider."],
+  vis:{k:"net", h:210, n:[["isp","☁️","Provider",170,100],["pos","🏦","Port of Spain",60,35],["sf","🏦","San Fernando",60,175],["ar","🏦","Arima",280,35],["sc","🏦","Scarborough",280,175]], l:[["isp","pos"],["isp","sf"],["isp","ar"],["isp","sc"]], cap:"A bank's branches linked into one WAN"}},
+ {tag:"def", h:"What is a WAN?",
+  p:["A **wide area network** connects networks over a large geographic area: across a country, or the world. Organisations normally **lease** the connections from a **service provider** (telecoms company or ISP) instead of laying their own cables.","The **internet** is the biggest WAN of all."]},
+ {tag:"def", h:"How WAN connections are made",
+  vis:{k:"table", h:["Connection","How it works","Notes"], rows:[["**Leased line**","A dedicated private link between two sites","Reliable and secure, but expensive"],["**DSL**","Internet over telephone (copper) lines","Speed drops with distance from the exchange"],["**Cable**","Internet over the TV coaxial cable","Bandwidth is shared with neighbours"],["**Fibre (FTTH)**","Fibre optic right to the building","Very fast, long distance"],["**Cellular** (4G/5G)","Over the mobile phone network","Good where there are no cables"],["**Satellite**","Via a satellite in orbit","Reaches remote places; higher delay"],["**MPLS**","Provider's network carries traffic using labels","Common for linking company branches"]]}},
+ {tag:"def", h:"The pieces at your end",
+  vis:{k:"steps", items:[["🏢","**CPE** (customer premises equipment): your router and modem"],["📍","**Demarcation point** (demarc): where your responsibility ends and the provider's begins"],["🛣️","**Local loop** (last mile): the line from the demarc to the provider"],["🏭","The provider's **central office** and network carry it onwards"]]},
+  after:"A **VPN** creates a secure, encrypted 'tunnel' across the public internet, so branches or home workers can connect privately without a leased line."},
+ {tag:"def", h:"LAN vs WAN",
+  vis:{k:"compare", cols:[{h:"LAN",items:["One building or site","Owned by the organisation","High speed, low cost per Mbps","Ethernet and Wi-Fi"]},{h:"WAN",items:["Cities, countries, the world","Usually leased from a provider","Slower and costs more per Mbps","Leased line, DSL, fibre, cellular, MPLS"]}]}},
+ {tag:"tricky", h:"The router is the doorway",
+  p:["The device that connects a LAN to a WAN is a **router**: it has a LAN interface on one side and a WAN interface on the other."],
+  tricky:"A WAN isn't defined by speed or technology but by **distance and who owns the links**."},
+ {tag:"mist", h:"Common mistakes",
+  mist:[["'A WAN is just a big LAN'","WANs usually run over a provider's leased links, not the organisation's own cables.","Mention both: large geographic area **and** provider links."],
+   ["Forgetting the internet is a WAN","It's the largest WAN, made of many networks.","LAN → MAN → WAN → the internet."],
+   ["Mixing up the demarc and the CPE","The CPE is equipment; the demarc is a point (a boundary).","Demarc = where responsibility changes hands."]]},
+ {tag:"check", h:"Quick check",
+  check:{q:"A company links its offices in Port of Spain and San Fernando with a private, dedicated connection rented from a telecoms provider. What is this?", o:["A LAN","A peer-to-peer network","A leased line WAN","Bluetooth"], a:2,
+   why:"Two distant sites + a **dedicated, rented** link = a **leased line**, which is a type of **WAN** connection."}}
+],
+/* ------------------------------------------------------------------ n8 */
+n8: [
+ {tag:"every", h:"Change the locks on a new house",
+  p:["When you move into a new house, you change the locks, because the builder, the agent and the last owner may all still have keys.","New network devices arrive with **default passwords** that are printed in the manual and online for anyone to find. **Hardening** means locking the device down before you use it."],
+  vis:{k:"scene", e:"🔐", items:[["Default password","Like the builder's spare key"],["Hardening","Changing the locks and closing the windows"],["Physical security","The gate, the burglar-proofing and the dog"]]}},
+ {tag:"def", h:"Device hardening",
+  p:["**Device hardening** reduces a device's **attack surface**: the number of ways in."],
+  vis:{k:"table", h:["Do this","Why"], rows:[["**Change default passwords** (and usernames)","Defaults are published online"],["**Update the firmware**","Patches fix known security holes"],["**Disable unused services**","Every running service is another way in"],["**Disable unused switch ports**","Stops someone plugging into a spare wall jack"],["Use **secure protocols**: SSH, not Telnet; HTTPS, not HTTP","Telnet and HTTP send passwords as plain text"],["**Back up the configuration**","Quick recovery after a failure or attack"]]}},
+ {tag:"def", h:"Disabling unused ports and services",
+  p:["On a switch, shut down every port that nothing is plugged into, and you can use **port security** to allow only known MAC addresses on a port.","Turn off services you don't use: Telnet, unused web management, UPnP, WPS."],
+  tricky:"**Telnet (port 23)** sends everything, including your password, as readable text. **SSH (port 22)** encrypts it. Always choose SSH."},
+ {tag:"def", h:"Physical security",
+  vis:{k:"steps", items:[["🚪","Keep switches, routers and servers in a **locked room or rack**"],["🪪","Control entry with **keys, key cards or badges**, and log who goes in"],["📹","**CCTV cameras** watch the equipment room"],["🔌","Lock or remove unused wall jacks; secure the **console port**"],["🌡️","Protect against heat and power cuts: air-conditioning and a **UPS**"]]}},
+ {tag:"ex", h:"Worked example: hardening a lab switch",
+  p:["A new switch arrives for a UTT lab. A good checklist:"],
+  vis:{k:"steps", items:[["1️⃣","Change the default admin password; set a console password"],["2️⃣","Update to the latest firmware"],["3️⃣","Enable SSH and disable Telnet and HTTP management"],["4️⃣","Shut down the 10 ports that aren't in use"],["5️⃣","Turn on port security for the student desks"],["6️⃣","Mount it in the locked rack; back up the config"]]}},
+ {tag:"tricky", h:"Physical access beats passwords",
+  p:["Someone with their hands on a device can often reset it to factory settings through the console port or reset button, wiping out your passwords."],
+  tricky:"That's why physical security is just as important as passwords: **lock the room**."},
+ {tag:"mist", h:"Common mistakes",
+  mist:[["Only changing the Wi-Fi password","The admin login is a different password.","Change the **admin** password too."],
+   ["Leaving unused ports enabled","Anyone can plug in.","Shut down every unused port."],
+   ["Managing devices with Telnet","Passwords travel as plain text.","Use SSH."]]},
+ {tag:"check", h:"Quick check",
+  check:{q:"Which is an example of PHYSICAL security?", o:["Changing the default password","Disabling Telnet","Keeping the switch in a locked rack","Updating firmware"], a:2,
+   why:"A **locked rack** stops people touching the device. The others are device hardening (logical security)."}}
+],
+/* ------------------------------------------------------------------ n9 */
+n9: [
+ {tag:"every", h:"Think like a doctor",
+  p:["A good doctor doesn't operate first and ask questions later. They ask about **symptoms**, think of a likely cause, run a **test**, give the **treatment**, check you're better, and write it in your **file**.","Network troubleshooting follows exactly the same steps."],
+  vis:{k:"scene", e:"🩺", items:[["Symptoms","What exactly is wrong? Who is affected?"],["Diagnosis","What's the most likely cause? Test it"],["Treatment","Fix it, check it worked, write it down"]]}},
+ {tag:"def", h:"The troubleshooting methodology",
+  vis:{k:"steps", items:[["1️⃣","**Identify the problem**: gather information, ask users, find what changed"],["2️⃣","**Establish a theory** of probable cause (start with the obvious)"],["3️⃣","**Test the theory** to find the cause"],["4️⃣","**Establish a plan** of action and identify possible effects"],["5️⃣","**Implement** the solution, or escalate"],["6️⃣","**Verify** full system functionality; add preventive measures"],["7️⃣","**Document** findings, actions and outcomes"]]},
+  tricky:"If the test in step 3 proves your theory wrong, go back to step 2 with a new theory."},
+ {tag:"def", h:"Hardware tools",
+  vis:{k:"table", h:["Tool","Used to"], rows:[["**Cable tester**","Check each of the 8 wires is connected in the right order"],["**Toner and probe**","Trace which cable is which (e.g. at the patch panel)"],["**Crimper**","Attach RJ45 plugs to UTP cable"],["**Punch-down tool**","Seat wires into a patch panel or keystone jack"],["**Loopback plug**","Test that a network port can send and receive"],["**Wi-Fi analyser**","See signal strength and which channels are busy"],["**Multimeter**","Check voltage and continuity"]]}},
+ {tag:"def", h:"Software tools (commands)",
+  vis:{k:"table", h:["Command (Windows)","What it tells you"], rows:[["`ipconfig` / `ipconfig /all`","Your IP, mask, gateway (and MAC, DHCP and DNS with /all)"],["`ipconfig /release` then `/renew`","Gives back and requests a new DHCP address"],["`ping 8.8.8.8`","Can I reach that address? How long does it take?"],["`tracert` (Linux: `traceroute`)","Every router (hop) along the path"],["`nslookup google.com`","Is DNS turning names into IP addresses?"],["`netstat`","Current connections and open ports"],["`arp -a`","IP-to-MAC addresses this PC has learned"]]}},
+ {tag:"ex", h:"Worked example: 'The internet isn't working'",
+  p:["A student's lab PC can't open any websites. Work from the PC outwards:"],
+  vis:{k:"steps", items:[["🔌","Link light on the network port? If not: check the cable and the switch port"],["🔎","`ipconfig`: 169.254.x.x? → DHCP problem. Try `ipconfig /renew`"],["🏠","`ping 127.0.0.1` → the PC's own network software works"],["🚪","`ping` the default gateway → can it reach the router?"],["🌍","`ping 8.8.8.8` works but websites by name don't? → **DNS** problem"],["📝","Fix it, test a few websites, then document what you found"]]}},
+ {tag:"def", h:"Common problems and likely causes",
+  vis:{k:"table", h:["Symptom","Likely cause"], rows:[["No link light","Bad or unplugged cable, dead port, wrong cable type"],["169.254.x.x address","DHCP server down or not reachable"],["Can ping IP addresses but not names","DNS server wrong or down"],["Wi-Fi drops or is slow far from the AP","Weak signal, distance, walls, interference"],["Wi-Fi slow in a crowded area","Channel overlap: use 1, 6 or 11 on 2.4 GHz, or switch to 5 GHz"],["Everything slow at certain times","Too much traffic (bandwidth saturation), a bottleneck"],["Video calls choppy","High **latency**, **jitter** or **packet loss**"]]}},
+ {tag:"tricky", h:"Start at the bottom",
+  p:["Many technicians work **bottom-up** through the OSI model: check the cable and lights (layer 1) before blaming DNS (layer 7). A surprising number of 'big' problems are an unplugged cable."],
+  tricky:"Always ask: **what changed?** A problem that started this morning is often linked to something done last night."},
+ {tag:"mist", h:"Common mistakes",
+  mist:[["Skipping straight to the fix","You may fix the wrong thing or cause new problems.","Identify → theory → test, before changing anything."],
+   ["Not verifying","The user may still have a problem you didn't notice.","Test the whole system after the fix."],
+   ["Not documenting","The next technician (or you) must start again from zero.","Write down the problem, cause and fix."]]},
+ {tag:"check", h:"Quick check",
+  check:{q:"A PC can `ping 8.8.8.8` but can't open google.com. What is the most likely problem?", o:["The cable is unplugged","DNS","The PC has no IP address","The switch is off"], a:1,
+   why:"Reaching an IP address proves the cable, IP settings and route all work. Failing only by **name** points to **DNS**."}}
+]
+});
 
 /* Generated by tools/trace.py from tools/traces.json: every row comes from really running the code in Python 3. Do not edit by hand. */
 const TRACES = {
@@ -3725,8 +4148,47 @@ function visHTML(v){
   if(v.k==="boxes") return `<div class="vboxes">${v.items.map(([n,val,old])=>`<div class="vbox"><div class="vv">${old!==undefined?`<s>${esc(old)}</s>`:""}${esc(val)}</div><div class="vn">${esc(n)}</div></div>`).join("")}</div>${v.cap?`<p class="viscap">${inl(v.cap)}</p>`:""}`;
   if(v.k==="table") return `<div class="ltable"><table><thead><tr>${v.h.map(x=>`<th>${inl(x)}</th>`).join("")}</tr></thead><tbody>${v.rows.map(r=>`<tr>${r.map(x=>`<td>${inl(String(x))}</td>`).join("")}</tr>`).join("")}</tbody></table></div>${v.cap?`<p class="viscap">${inl(v.cap)}</p>`:""}`;
   if(v.k==="steps") return `<div class="lsteps">${v.items.map(([e,t],k)=>`<div class="lstep"><span class="le">${e}</span><span>${inl(t)}</span></div>${k<v.items.length-1?`<i aria-hidden="true">↓</i>`:""}`).join("")}</div>`;
+  if(v.k==="net") return netSVG(v);
+  if(v.k==="pins") return pinsHTML(v);
+  if(v.k==="bin") return binHTML(v);
+  if(v.k==="ip") return ipHTML(v);
+  if(v.k==="layers") return layersHTML(v);
+  if(v.k==="compare") return compareHTML(v);
   if(v.k==="scene") return `<div class="scene"><span class="se">${v.e}</span><div>${v.items?v.items.map(([a,b])=>`<div class="sc-row"><b>${inl(a)}</b><span>${inl(b)}</span></div>`).join(""):""}</div></div>`;
   return "";
+}
+
+/* ---------- network visuals ---------- */
+function netSVG(v){
+  const W=v.w||340, H=v.h||200, by=Object.fromEntries(v.n.map(n=>[n[0],n]));
+  const links=(v.l||[]).map(([a,b,st])=>{ const A=by[a], B=by[b]; return `<line x1="${A[3]}" y1="${A[4]}" x2="${B[3]}" y2="${B[4]}" class="nl ${st||""}"/>`; }).join("");
+  const ring = v.ring ? `<ellipse cx="${v.ring[0]}" cy="${v.ring[1]}" rx="${v.ring[2]}" ry="${v.ring[3]}" class="nl"/>` : "";
+  const nodes=v.n.map(([id,e,lab,x,y])=> e==="." ? `<circle cx="${x}" cy="${y}" r="4" class="ndot"/>` : `<g class="nn"><circle cx="${x}" cy="${y}" r="19"/><text x="${x}" y="${y+6}" class="ne">${e}</text>${lab?`<text x="${x}" y="${y+33}" class="nt">${esc(lab)}</text>`:""}</g>`).join("");
+  return `<div class="fcwrap">${v.title?`<div class="vis-title">${esc(v.title)}</div>`:""}<svg class="net" viewBox="0 0 ${W} ${H}" style="max-width:${W+40}px" role="img" aria-label="${esc(v.title||"Network diagram")}">${ring}${links}${nodes}</svg>${v.cap?`<p class="viscap" style="text-align:center">${inl(v.cap)}</p>`:""}</div>`;
+}
+const PINS = {B:["white/orange","orange","white/green","blue","white/blue","green","white/brown","brown"], A:["white/green","green","white/orange","blue","white/blue","orange","white/brown","brown"]};
+const WIRE = {orange:"#E8771E", green:"#2E9B48", blue:"#2F6FEB", brown:"#7A4B2A"};
+function pinsHTML(v){
+  const one = s => `<div class="pins"><b>T568${s}</b>${PINS[s].map((c,k)=>{ const col=WIRE[c.replace("white/","")], st=c.startsWith("white/"); return `<div class="pin"><span class="pn">${k+1}</span><span class="wire" style="${st?`background:repeating-linear-gradient(135deg,#fff 0 6px,${col} 6px 12px)`:`background:${col}`}"></span><span class="wn">${c}</span></div>`; }).join("")}</div>`;
+  return `<div class="pinwrap">${(v.std||"B").split("").map(one).join("")}</div>${v.cap?`<p class="viscap">${inl(v.cap)}</p>`:""}`;
+}
+function binHTML(v){
+  const n=v.n, bits=[128,64,32,16,8,4,2,1].map(p=>(n&p)?1:0);
+  return `<div class="ltable bin"><table><thead><tr>${[128,64,32,16,8,4,2,1].map(p=>`<th>${p}</th>`).join("")}</tr></thead><tbody><tr>${bits.map(b=>`<td class="${b?"on":""}">${b}</td>`).join("")}</tr></tbody></table></div>
+  <p class="viscap">${bits.map((b,k)=>b?[128,64,32,16,8,4,2,1][k]:null).filter(x=>x!==null).join(" + ")||"0"} = <b>${n}</b></p>`;
+}
+function ipCalc(ip, cidr){
+  const a = ip.split(".").map(Number), num = ((a[0]<<24)>>>0) + (a[1]<<16) + (a[2]<<8) + a[3];
+  const mask = cidr===0 ? 0 : (0xFFFFFFFF << (32-cidr))>>>0, net = (num & mask)>>>0, bc = (net | (~mask>>>0))>>>0;
+  const d = x => [24,16,8,0].map(s=>(x>>>s)&255).join(".");
+  const hosts = cidr>=31 ? 0 : Math.pow(2,32-cidr)-2;
+  return {mask:d(mask), net:d(net), bc:d(bc), first:d(net+1), last:d(bc-1), hosts, bits:a.map(o=>o.toString(2).padStart(8,"0")).join("")};
+}
+function ipHTML(v){
+  const r = ipCalc(v.ip, v.cidr);
+  const bits = r.bits.split("").map((b,k)=>`<i class="${k<v.cidr?"nb":"hb"}">${b}</i>${k%8===7&&k<31?`<u>.</u>`:""}`).join("");
+  return `<div class="ipv"><div class="ipbits">${bits}</div><div class="iplg"><span class="nb">network bits: ${v.cidr}</span><span class="hb">host bits: ${32-v.cidr}</span></div>
+  <div class="ltable"><table><tbody>${[["Address",`${v.ip}/${v.cidr}`],["Subnet mask",r.mask],["Network address",r.net],["First usable host",r.first],["Last usable host",r.last],["Broadcast address",r.bc],["Usable hosts",`2<sup>${32-v.cidr}</sup> − 2 = ${r.hosts}`]].map(([a,b])=>`<tr><td>${a}</td><td class="mono"><b>${b}</b></td></tr>`).join("")}</tbody></table></div></div>`;
 }
 
 /* ---------- trace table player ---------- */
@@ -3876,7 +4338,7 @@ function viewLesson(v){
     <span class="ltag ltag-${sc.tag}">${LTAG[sc.tag]||""}</span>
     ${sc.h?`<h2 class="lh">${inl(sc.h)}</h2>`:""}
     ${(sc.p||[]).map(p=>`<p class="lp">${ptext(p)}</p>`).join("")}
-    ${visHTML(sc.vis)}
+    ${visHTML(sc.vis)}${visHTML(sc.vis2)}
     ${sc.code?`<pre class="qcode">${esc(sc.code)}</pre>${sc.out!==undefined?`<div class="lout"><span>Output</span><pre>${esc(sc.out)}</pre></div>`:""}`:""}
     ${sc.run && PY_OK?`<details class="tryit"><summary>▶️ Try it yourself: run and change this code</summary>${runnerHTML(sc.run.code||sc.code, sc.run.inputs||[])}</details>`:""}
     ${sc.tricky?`<div class="tricky">${ptext(sc.tricky)}</div>`:""}
