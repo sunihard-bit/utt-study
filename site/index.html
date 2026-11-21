@@ -3706,19 +3706,117 @@ let cloudDoc = null, saveT = null, syncT = null, dirty = false, lastSync = null,
 function save(){
   try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){}
   if(cloudDoc){ clearTimeout(saveT); saveT = setTimeout(()=>{ cloudDoc.set({state:JSON.stringify(S), xp:S.xp, at:Date.now()}).catch(()=>{}); }, 1500); }
-  if(canSync()){ dirty = true; clearTimeout(syncT); syncT = setTimeout(syncNow, 30000); }
+  if(canSync()){ dirty = true; clearTimeout(syncT); syncT = setTimeout(syncNow, 5000); }
 }
 function canSync(){ return STANDALONE && /^https?:/.test(location.protocol) && S.role!=="parent" && !!S.name && !!S.cloud?.code; }
 const CODE_ABC = "abcdefghjkmnpqrstuvwxyz23456789";
 function newCode(){ const b = new Uint8Array(16); crypto.getRandomValues(b); return [...b].map(x=>CODE_ABC[x % CODE_ABC.length]).join(""); }
 const fmtCode = c => (c||"").replace(/(.{4})(?=.)/g,"$1-");
-async function syncNow(){
-  if(!canSync() || !dirty) return;
-  dirty = false; clearTimeout(syncT);
+/* ---- two-way sync: every device using the same code shares one progress ----
+   Each device keeps a copy of the last state it agreed with the cloud ("base").
+   On sync it pulls the cloud copy, merges in only what changed here since the base,
+   then pushes the result. Counters add up, lists are joined, settings: newest change wins. */
+const BASE_KEY = KEY+".base";
+const LOCAL_ONLY = ["cloud","shopTab","filter","map","find","pendXP","pendBase"];
+const jeq = (a,b) => JSON.stringify(a)===JSON.stringify(b);
+const isObj = x => x && typeof x==="object" && !Array.isArray(x);
+function addN(l,r,b){ return Math.max(0, (+r||0) + (+l||0) - (+b||0)); }
+function mergeMap(l,r,b,each){ l=l||{}; r=r||{}; b=b||{}; const o={};
+  for(const k of new Set([...Object.keys(l),...Object.keys(r)])){
+    const v = each ? each(l[k],r[k],b[k],k) : (jeq(l[k],b[k]) ? r[k] : l[k]);
+    if(v!==undefined) o[k]=v; }
+  return o; }
+function pick3(l,r,b){ return jeq(l,b) ? r : l; }
+function joinLog(l,r){ const seen=new Set(), out=[];
+  for(const e of [...(r||[]),...(l||[])]){ const k=e.at+"|"+(e.q||e.title||""); if(!seen.has(k)){ seen.add(k); out.push(e); } }
+  return out.sort((x,y)=>x.at<y.at?-1:x.at>y.at?1:0); }
+function mergeTopic(l,r,b){ if(!l) return r; if(!r) return l; b=b||{};
+  const o = Object.assign({}, r);
+  for(const k of ["att","ok","time","lessons","wrong","quiz"]) o[k]=addN(l[k],r[k],b[k]);
+  o.best=Math.max(l.best||0, r.best||0); o.last=[l.last,r.last].filter(Boolean).sort().pop()||null;
+  o.recent = jeq(l.recent,b.recent) ? r.recent : l.recent; return o; }
+function mergeState(L,R,B){
+  B=B||{}; const M={};
+  for(const k of new Set([...Object.keys(L),...Object.keys(R)])){
+    const l=L[k], r=R[k], b=B[k];
+    if(LOCAL_ONLY.includes(k)) M[k]=l;
+    else if(["xp","coins"].includes(k)) M[k]=addN(l,r,b);
+    else if(k==="freezes") M[k]=Math.min(2, addN(l,r,b));
+    else if(k==="n") M[k]=mergeMap(l,r,b,(x,y,z)=>addN(x,y,z));
+    else if(k==="days") M[k]=mergeMap(l,r,b,(x,y,z)=>addN(x,y,z)||undefined);
+    else if(k==="topics") M[k]=mergeMap(l,r,b,mergeTopic);
+    else if(k==="log"||k==="quizLog") M[k]=joinLog(l,r);
+    else if(k==="games") M[k]=mergeMap(l,r,b,(x,y)=>Math.max(x||0,y||0)||undefined);
+    else if(["badges","owned","claimed","beepOK","lessonsDone"].includes(k)) M[k]=mergeMap(l,r,{},(x,y)=>x===undefined?y:y===undefined?x:(x<y?x:y));
+    else if(k==="lessonDay"||k==="lessonPos") M[k]=mergeMap(l,r,b,(x,y)=>x===undefined?y:y===undefined?x:(x>y?x:y));
+    else if(k==="srs") M[k]=mergeMap(l,r,b);
+    else if(k==="mistakes"){ const ix=a=>Object.fromEntries((a||[]).map(m=>[m.id,m]));
+      M[k]=Object.values(mergeMap(ix(l),ix(r),ix(b))).sort((x,y)=>(y.d||"").localeCompare(x.d||"")).slice(0,60); }
+    else if(k==="best") M[k]=Math.max(l||0,r||0);
+    else if(k==="chestDay") M[k]=[l,r].filter(Boolean).sort().pop()||null;
+    else if(k==="created") M[k]=[l,r].filter(Boolean).sort()[0]||null;
+    else if(k==="last"||k==="streak") continue;
+    else M[k]=pick3(l,r,b);
+  }
+  /* the streak belongs to whichever device studied most recently */
+  const lw = (L.last||"") > (R.last||"") || ((L.last||"")===(R.last||"") && (L.streak||0)>=(R.streak||0));
+  M.last = lw ? L.last : R.last; M.streak = lw ? L.streak : R.streak;
+  M.best = Math.max(M.best||0, M.streak||0);
+  /* a badge or level reached on both devices before they synced only pays its coins once */
+  const bb=B.badges||{}, rb=R.badges||{}; let dup=0;
+  for(const k in (L.badges||{})) if(rb[k] && !bb[k]) dup+=25;
+  if(B.xp!==undefined) dup += 50*Math.max(0, Math.min(levelOf(L.xp||0), levelOf(R.xp||0)) - levelOf(B.xp||0));
+  if(M.coins!==undefined) M.coins = Math.max(0, M.coins - dup);
+  return Object.assign(DEF(), M, {n:Object.assign(DEF().n, M.n||{})});
+}
+function loadBase(){ try{ return JSON.parse(localStorage.getItem(BASE_KEY)||"null"); }catch(e){ return null; } }
+function saveBase(st){ try{ localStorage.setItem(BASE_KEY, JSON.stringify(st)); }catch(e){} }
+let syncing = false;
+async function syncNow(opts={}){
+  if(!canSync() || syncing) return;
+  if(!dirty && !opts.pull) return;
+  syncing = true; clearTimeout(syncT);
   try{
-    const r = await fetch("/api/backup/"+S.cloud.code, {method:"PUT", keepalive:true, headers:{"content-type":"application/json"}, body:JSON.stringify({state:S, at:new Date().toISOString()})});
-    if(!r.ok) throw 0; lastSync = new Date(); syncErr = false;
+    const remote = await pullCloud(S.cloud.code);
+    const before = JSON.stringify(S);
+    /* no base yet (first sync after this update): the cloud copy came from this device, so it is the base */
+    let merged = remote ? mergeState(S, remote, loadBase() || remote) : S;
+    const changedHere = !jeq(merged, S);
+    const needPush = dirty || !remote || !jeq(merged, remote);
+    dirty = false;
+    if(changedHere){ S = merged; try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){} }
+    const snap = JSON.stringify(S);
+    if(needPush){
+      const r = await fetch("/api/backup/"+S.cloud.code, {method:"PUT", keepalive:true, headers:{"content-type":"application/json"}, body:JSON.stringify({state:JSON.parse(snap), at:new Date().toISOString()})});
+      if(!r.ok) throw 0;
+    }
+    try{ localStorage.setItem(BASE_KEY, snap); }catch(e){} lastSync = new Date(); syncErr = false;
+    if(changedHere && JSON.stringify(S)!==before) afterSyncChange();
   }catch(e){ dirty = true; syncErr = true; }
+  syncing = false;
+}
+/* link this device to another device's code: both histories are added together */
+async function linkDevice(raw){
+  const code = String(raw||"").toLowerCase().replace(/[^a-z0-9]/g,"");
+  if(!/^[a-z2-9]{16}$/.test(code)){ toast("That code should be 16 letters and numbers."); return; }
+  if(code===S.cloud?.code){ toast("This device already uses that code."); return; }
+  try{
+    await syncNow();
+    const remote = await pullCloud(code);
+    if(!remote){ toast("No backup found for that code."); return; }
+    const old = S.cloud?.code;
+    S = mergeState(S, remote, {}); S.cloud = {code, since:today(), was:old};
+    try{ localStorage.setItem(KEY, JSON.stringify(S)); localStorage.removeItem(BASE_KEY); }catch(e){}
+    dirty = true; await syncNow({pull:true});
+    if(syncErr) toast("Linked, but couldn't upload yet. It will retry with internet.");
+    else toast("Linked! This device now shares progress with your other device.", true);
+    applyTheme(); render();
+  }catch(e){ toast("Couldn't reach the backup. Check your internet and try again."); }
+}
+function afterSyncChange(){
+  applyTheme(); renderHeader();
+  /* don't yank the screen away in the middle of a quiz, game or lesson */
+  if(["home","rewards","me","topics","practice","parent"].includes(tab)) render();
 }
 async function pullCloud(code){
   const r = await fetch("/api/backup/"+code, {cache:"no-store"});
@@ -3744,14 +3842,11 @@ async function initCloud(){
     return;
   }
   if(!/^https?:/.test(location.protocol) || S.role==="parent" || !S.name) return;
-  if(!S.cloud?.code){ S.cloud = {code:newCode(), since:today()}; dirty = true; save(); syncNow(); return; }
-  try{
-    const remote = await pullCloud(S.cloud.code);
-    if(remote && (remote.xp||0) > S.xp){ const code=S.cloud.code; S = Object.assign(DEF(), remote); S.n = Object.assign(DEF().n, S.n||{}); S.cloud = Object.assign({}, S.cloud, {code}); try{localStorage.setItem(KEY, JSON.stringify(S));}catch(e){} applyTheme(); render(); toast("Progress restored from your cloud backup"); }
-    else { dirty = true; syncNow(); }
-  }catch(e){ syncErr = true; }
+  if(!S.cloud?.code){ S.cloud = {code:newCode(), since:today()}; dirty = true; save(); }
+  await syncNow({pull:true});
 }
-document.addEventListener("visibilitychange", ()=>{ if(document.visibilityState==="hidden") syncNow(); });
+setInterval(()=>{ if(document.visibilityState==="visible") syncNow({pull:true}); }, 60000);
+document.addEventListener("visibilitychange", ()=>{ syncNow({pull:document.visibilityState==="visible"}); });
 window.addEventListener("pagehide", ()=>syncNow());
 
 /* =================== LEVELS, XP, STREAKS =================== */
@@ -4076,7 +4171,7 @@ function viewWelcome(v){
     <input class="field" id="nm" maxlength="30" autocomplete="given-name" placeholder="Your first name" value="Suri" required></div>
     <button class="btn block" type="submit">Start studying</button>
   </form></div>
-  <div class="card"><span class="eyebrow">New phone?</span><p style="margin:6px 0 10px">Bring back your XP, streak and progress with your backup code.</p>
+  <div class="card"><span class="eyebrow">Already use the app on another device?</span><p style="margin:6px 0 10px">Enter the backup code from <b>Me → Settings</b> on that device to bring your progress here and keep both in sync.</p>
     <div class="row" style="flex-wrap:nowrap"><input class="field mono" id="rcode" placeholder="xxxx-xxxx-xxxx-xxxx" autocomplete="off" autocapitalize="off"><button class="btn sm" id="rgo">Restore</button></div></div>
   <div class="card"><span class="eyebrow">Parents</span><p style="margin:6px 0 10px">Setting up real-life rewards from your own phone?</p><button class="btn line block" id="asParent">I'm a parent</button></div>`;
   $("#asParent").onclick = ()=>{ S.role="parent"; S.name="Parent"; save(); go("parenthome"); };
@@ -4090,6 +4185,7 @@ async function restoreFrom(raw){
     const remote = await pullCloud(code);
     if(!remote){ toast("No backup found for that code."); return; }
     S = Object.assign(DEF(), remote); S.n = Object.assign(DEF().n, S.n||{}); S.cloud = {code, since:S.cloud?.since||today()}; S.role=null;
+    try{ localStorage.setItem(BASE_KEY, JSON.stringify(S)); }catch(e){}
     save(); applyTheme(); toast(`Welcome back, ${S.name}! Progress restored.`, true); go("home");
   }catch(e){ toast("Couldn't reach the backup. Check your internet and try again."); }
 }
@@ -4496,10 +4592,13 @@ function viewMe(v){
       <div><label class="lab" for="rn">Name</label><div class="row" style="flex-wrap:nowrap"><input class="field" id="rn" value="${esc(S.name)}" maxlength="30"><button class="btn sm" id="rnSave">Save</button></div></div>
       <div><span class="lab">Appearance</span><div class="seg">${[["auto","Auto"],["light","Light"],["dark","Dark"]].map(([k,l])=>`<button class="${(S.look||"auto")===k?"on":""}" data-look="${k}">${l}</button>`).join("")}</div></div>
       <div><span class="lab">Cloud backup</span>
-        ${S.cloud?.code?`<p style="margin:0 0 6px;font-size:14px">Your progress backs up automatically. On a new phone, choose <b>Restore</b> on the welcome screen and enter this code:</p>
+        ${S.cloud?.code?`<p style="margin:0 0 6px;font-size:14px">Your progress backs up and syncs automatically. Every phone or computer that uses this code shows the same XP, coins and progress.</p>
         <div class="row" style="flex-wrap:nowrap"><input class="field mono" readonly value="${fmtCode(S.cloud.code)}" id="ccode"><button class="btn sm" id="ccopy">Copy</button></div>
-        <p class="muted" style="margin:6px 0 0;font-size:13px" id="cstat">${syncErr?"Last backup didn't go through (no internet?). It will retry.":lastSync?"Backed up at "+lastSync.toLocaleTimeString([], {hour:"numeric",minute:"2-digit"})+".":"Backs up a few seconds after you study."}</p>
-        <button class="btn line sm" id="cnow" style="margin-top:8px">Back up now</button>`
+        <p class="muted" style="margin:6px 0 0;font-size:13px" id="cstat">${syncErr?"Last backup didn't go through (no internet?). It will retry.":lastSync?"Synced at "+lastSync.toLocaleTimeString([], {hour:"numeric",minute:"2-digit"})+".":"Backs up a few seconds after you study."}</p>
+        <button class="btn line sm" id="cnow" style="margin-top:8px">Sync now</button>
+        <div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--line)"><span class="lab">Link another device</span>
+        <p style="margin:0 0 6px;font-size:14px">Using the app on a phone <i>and</i> a computer? On this device, type the code shown on the other one. Both sets of progress are added together and stay in sync from then on.</p>
+        <div class="row" style="flex-wrap:nowrap"><input class="field mono" id="lcode" placeholder="xxxx-xxxx-xxxx-xxxx" autocomplete="off" autocapitalize="off"><button class="btn sm" id="lgo">Link</button></div></div>`
         :`<p class="muted" style="margin:0;font-size:14px">Cloud backup starts when you use the app online at utt.tidyassistant.com.</p>`}
       </div>
     </div></div>`;
@@ -4507,7 +4606,8 @@ function viewMe(v){
   $("#rnSave").onclick=()=>{ const n=$("#rn").value.trim(); if(n){ S.name=n; save(); toast("Name saved"); render(); } };
   v.querySelectorAll("[data-look]").forEach(b=>b.onclick=()=>{ S.look=b.dataset.look; save(); applyTheme(); render(); });
   if($("#ccopy")) $("#ccopy").onclick=async()=>{ try{ await navigator.clipboard.writeText(fmtCode(S.cloud.code)); toast("Backup code copied"); }catch(e){ $("#ccode").select(); } };
-  if($("#cnow")) $("#cnow").onclick=async()=>{ dirty=true; await syncNow(); render(); toast(syncErr?"Couldn't reach the backup. Try again with internet.":"Backed up ✓"); };
+  if($("#cnow")) $("#cnow").onclick=async()=>{ dirty=true; await syncNow({pull:true}); render(); toast(syncErr?"Couldn't reach the backup. Try again with internet.":"Synced ✓"); };
+  if($("#lgo")) $("#lgo").onclick=()=>linkDevice($("#lcode").value);
 }
 
 /* =================== COACH DOOR (main app) =================== */

@@ -290,10 +290,13 @@ function viewMe(v){
       <div><label class="lab" for="rn">Name</label><div class="row" style="flex-wrap:nowrap"><input class="field" id="rn" value="${esc(S.name)}" maxlength="30"><button class="btn sm" id="rnSave">Save</button></div></div>
       <div><span class="lab">Appearance</span><div class="seg">${[["auto","Auto"],["light","Light"],["dark","Dark"]].map(([k,l])=>`<button class="${(S.look||"auto")===k?"on":""}" data-look="${k}">${l}</button>`).join("")}</div></div>
       <div><span class="lab">Cloud backup</span>
-        ${S.cloud?.code?`<p style="margin:0 0 6px;font-size:14px">Your progress backs up automatically. On a new phone, choose <b>Restore</b> on the welcome screen and enter this code:</p>
+        ${S.cloud?.code?`<p style="margin:0 0 6px;font-size:14px">Your progress backs up and syncs automatically. Every phone or computer that uses this code shows the same XP, coins and progress.</p>
         <div class="row" style="flex-wrap:nowrap"><input class="field mono" readonly value="${fmtCode(S.cloud.code)}" id="ccode"><button class="btn sm" id="ccopy">Copy</button></div>
-        <p class="muted" style="margin:6px 0 0;font-size:13px" id="cstat">${syncErr?"Last backup didn't go through (no internet?). It will retry.":lastSync?"Backed up at "+lastSync.toLocaleTimeString([], {hour:"numeric",minute:"2-digit"})+".":"Backs up a few seconds after you study."}</p>
-        <button class="btn line sm" id="cnow" style="margin-top:8px">Back up now</button>`
+        <p class="muted" style="margin:6px 0 0;font-size:13px" id="cstat">${syncErr?"Last backup didn't go through (no internet?). It will retry.":lastSync?"Synced at "+lastSync.toLocaleTimeString([], {hour:"numeric",minute:"2-digit"})+".":"Backs up a few seconds after you study."}</p>
+        <button class="btn line sm" id="cnow" style="margin-top:8px">Sync now</button>
+        <div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--line)"><span class="lab">Link another device</span>
+        <p style="margin:0 0 6px;font-size:14px">Using the app on a phone <i>and</i> a computer? On this device, type the code shown on the other one. Both sets of progress are added together and stay in sync from then on.</p>
+        <div class="row" style="flex-wrap:nowrap"><input class="field mono" id="lcode" placeholder="xxxx-xxxx-xxxx-xxxx" autocomplete="off" autocapitalize="off"><button class="btn sm" id="lgo">Link</button></div></div>`
         :`<p class="muted" style="margin:0;font-size:14px">Cloud backup starts when you use the app online at utt.tidyassistant.com.</p>`}
       </div>
     </div></div>`;
@@ -301,7 +304,8 @@ function viewMe(v){
   $("#rnSave").onclick=()=>{ const n=$("#rn").value.trim(); if(n){ S.name=n; save(); toast("Name saved"); render(); } };
   v.querySelectorAll("[data-look]").forEach(b=>b.onclick=()=>{ S.look=b.dataset.look; save(); applyTheme(); render(); });
   if($("#ccopy")) $("#ccopy").onclick=async()=>{ try{ await navigator.clipboard.writeText(fmtCode(S.cloud.code)); toast("Backup code copied"); }catch(e){ $("#ccode").select(); } };
-  if($("#cnow")) $("#cnow").onclick=async()=>{ dirty=true; await syncNow(); render(); toast(syncErr?"Couldn't reach the backup. Try again with internet.":"Backed up ✓"); };
+  if($("#cnow")) $("#cnow").onclick=async()=>{ dirty=true; await syncNow({pull:true}); render(); toast(syncErr?"Couldn't reach the backup. Try again with internet.":"Synced ✓"); };
+  if($("#lgo")) $("#lgo").onclick=()=>linkDevice($("#lcode").value);
 }
 
 /* =================== COACH DOOR (main app) =================== */

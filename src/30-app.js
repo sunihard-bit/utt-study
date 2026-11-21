@@ -52,7 +52,7 @@ function viewWelcome(v){
     <input class="field" id="nm" maxlength="30" autocomplete="given-name" placeholder="Your first name" value="Suri" required></div>
     <button class="btn block" type="submit">Start studying</button>
   </form></div>
-  <div class="card"><span class="eyebrow">New phone?</span><p style="margin:6px 0 10px">Bring back your XP, streak and progress with your backup code.</p>
+  <div class="card"><span class="eyebrow">Already use the app on another device?</span><p style="margin:6px 0 10px">Enter the backup code from <b>Me → Settings</b> on that device to bring your progress here and keep both in sync.</p>
     <div class="row" style="flex-wrap:nowrap"><input class="field mono" id="rcode" placeholder="xxxx-xxxx-xxxx-xxxx" autocomplete="off" autocapitalize="off"><button class="btn sm" id="rgo">Restore</button></div></div>
   <div class="card"><span class="eyebrow">Parents</span><p style="margin:6px 0 10px">Setting up real-life rewards from your own phone?</p><button class="btn line block" id="asParent">I'm a parent</button></div>`;
   $("#asParent").onclick = ()=>{ S.role="parent"; S.name="Parent"; save(); go("parenthome"); };
@@ -66,6 +66,7 @@ async function restoreFrom(raw){
     const remote = await pullCloud(code);
     if(!remote){ toast("No backup found for that code."); return; }
     S = Object.assign(DEF(), remote); S.n = Object.assign(DEF().n, S.n||{}); S.cloud = {code, since:S.cloud?.since||today()}; S.role=null;
+    try{ localStorage.setItem(BASE_KEY, JSON.stringify(S)); }catch(e){}
     save(); applyTheme(); toast(`Welcome back, ${S.name}! Progress restored.`, true); go("home");
   }catch(e){ toast("Couldn't reach the backup. Check your internet and try again."); }
 }
